@@ -1,14 +1,16 @@
 ﻿from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
+from .database import init_db, db
+from .routes.product import product_bp
 
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@127.0.0.1/login_roles_db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    init_db(app)
 
-    db.init_app(app)
+    # Importar modelos
+    from . import models  
+    
+    # Registrar rutas
+    app.register_blueprint(product_bp, url_prefix="/products")
 
     with app.app_context():
         db.create_all()
