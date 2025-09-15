@@ -1,4 +1,4 @@
-﻿from flask import Flask
+﻿﻿from flask import Flask
 from .database import init_db, db
 from .routes.product import product_bp
 
