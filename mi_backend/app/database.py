@@ -1,9 +1,13 @@
-import mysql.connector
+import os
+from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
 
-def get_connection():
-    return mysql.connector.connect(
-        host="127.0.0.1",
-        user="root",
-        password="1234",
-        database="improexpress_database"
-    )
+db = SQLAlchemy()
+
+
+def init_db(app):
+    load_dotenv()
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URI")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    db.init_app(app)

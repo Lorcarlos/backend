@@ -1,7 +1,7 @@
 # app/routes/personal.py
 from validator import validator
 from flask import Blueprint, jsonify, request
-from ...models.staff.staff import get_personal_data, insert_personal_data
+from ...services.staff.staff import get_personal_data, insert_personal_data
 
 personal_bp = Blueprint("personal", __name__)
 
