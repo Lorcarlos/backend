@@ -1,6 +1,7 @@
 from ..database import db
 from datetime import datetime, timezone
 
+
 class Product(db.Model):
     __tablename__ = "product"
 

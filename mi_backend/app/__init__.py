@@ -6,9 +6,6 @@ def create_app():
     app = Flask(__name__)
     init_db(app)
 
-    # Importar modelos
-    from . import services
-
     # Registrar rutas
     app.register_blueprint(product_bp, url_prefix="/products")
 
