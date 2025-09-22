@@ -7,10 +7,14 @@ from datetime import datetime, timezone
 
 class ProductService:
 
+    @staticmethod
     def get_all_products() -> list[dict]:
+
         products = Product.query.filter(Product.deleted_at.is_(None)).all()
+
         return [p.to_dict() for p in products]
 
+    @staticmethod
     def create_product_service(product):
 
         required_fields = {
@@ -28,11 +32,6 @@ class ProductService:
         if len(product["name"]) < 3:
             raise ValueError("El nombre del producto no puede ser menor a 3 caracteres")
 
-        try:
-            price = Decimal(product["price"])
-        except Exception:
-            raise ValueError("El precio debe ser un número válido")
-
         product_exists = Product.query.filter(
             Product.deleted_at.is_(None),
             Product.name == product["name"],
@@ -42,6 +41,12 @@ class ProductService:
         if product_exists:
             raise ValueError("El producto ingresado ya existe")
 
+        try:
+            price = Decimal(product["price"])
+
+        except Exception:
+            raise ValueError("El precio debe ser un número válido")
+
         new_product = Product(
             name=product["name"],
             size=product["size"],
@@ -49,11 +54,13 @@ class ProductService:
             description=product["description"],
             is_active=product.get("is_active", True),
         )
+
         db.session.add(new_product)
         db.session.commit()
 
         return new_product
 
+    @staticmethod
     def delete_product_by_id(id_product):
 
         product_to_delete = ProductService.get_product_by_id(id_product)
@@ -69,16 +76,17 @@ class ProductService:
 
         product = Product.query.filter(
             Product.deleted_at.is_(None), Product.id == id_product
-        ).one_or_none()
+        ).first()
 
         if product is None:
             raise ValueError("Producto no encontrado")
 
         return product
 
+    @staticmethod
     def update_product_by_id(id_product, data):
 
-        product_result = ProductService.get_product_by_id(id_product)
+        product = ProductService.get_product_by_id(id_product)
 
         allowed_fields = ["name", "size", "price", "description", "is_active"]
 
@@ -92,20 +100,20 @@ class ProductService:
                 except Exception:
                     raise ValueError("El precio debe ser un número válido")
 
-            setattr(product_result, key, value)
+            setattr(product, key, value)
 
-        product_result.name = product_result.name.strip().lower()
-        product_result.size = product_result.size.strip().lower()
+        product.name = product.name.strip().lower()
+        product.size = product.size.strip().lower()
 
-        if len(product_result.name) < 3:
+        if len(product.name) < 3:
             raise ValueError("El nombre del producto no puede ser menor a 3 caracteres")
 
         with db.session.no_autoflush:
             product_exists = Product.query.filter(
                 Product.deleted_at.is_(None),
-                Product.id != product_result.id,
-                Product.name == product_result.name,
-                Product.size == product_result.size,
+                Product.id != product.id,
+                Product.name == product.name,
+                Product.size == product.size,
             ).first()
 
             if product_exists:
@@ -113,4 +121,4 @@ class ProductService:
 
         db.session.commit()
 
-        return product_result
+        return product
