@@ -7,7 +7,7 @@ class Company(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    nit = db.Column(db.String(20), nullable=False, unique=True)
+    nit = db.Column(db.String(20), nullable=False)
 
     created_at = db.Column(
         db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
@@ -21,9 +21,6 @@ class Company(db.Model):
     )
 
     deleted_at = db.Column(db.DateTime, nullable=True)
-
-    # Índice para acelerar consultas
-    __table_args__ = (db.UniqueConstraint("nit", name="uq_company_nit"),)
 
     def to_dict(self):
         return {
