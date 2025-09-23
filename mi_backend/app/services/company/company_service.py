@@ -5,6 +5,7 @@ class CompanyService:
 
     @staticmethod
     def get_all_companies():
+
         companies = Company.query.filter(Company.deleted_at.is_(None)).all()
 
         return [company.to_dict() for company in companies]

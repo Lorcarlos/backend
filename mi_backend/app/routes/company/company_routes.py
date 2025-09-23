@@ -21,7 +21,10 @@ def get_company_by_id(id_company):
     try:
         id_company = int(id_company)
         if id_company <= 0:
-            return jsonify({"ok": False, "error": "El id ingresado debe ser positivo"})
+            return (
+                jsonify({"ok": False, "error": "El id ingresado debe ser positivo"}),
+                400,
+            )
 
         company = CompanyService.get_company_by_id(id_company)
 
