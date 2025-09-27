@@ -1,4 +1,4 @@
-from ...models.inventory import Inventory
+from ...models.inventort.inventory import Inventory
 
 
 class InventoryService:

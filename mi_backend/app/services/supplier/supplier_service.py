@@ -1,4 +1,4 @@
-from ...models.supplier import Supplier
+from ...models.supplier.supplier import Supplier
 from ...validator.validator import validate_data, validate_supplier_data
 from ...database import db
 from datetime import datetime, timezone

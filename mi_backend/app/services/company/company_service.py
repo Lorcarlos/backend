@@ -1,4 +1,4 @@
-from ...models.company import Company
+from ...models.company.company import Company
 
 
 class CompanyService:

@@ -1,4 +1,4 @@
-from ...models.transaction_type import Transaction_type
+from ...models.transaction.transaction_type import Transaction_type
 
 
 class Transaction_type_service:

@@ -34,6 +34,8 @@ app/
 1. Instalar dependencias:
 ```bash
 pip install -r requirements.txt
+python -m pip install python-dotenv
+
 ```
 
 2. Configurar variables de entorno:
@@ -55,4 +57,5 @@ python run.py
 - `/branches` - Gestión de sucursales
 - `/inventories` - Consulta de inventarios
 - `/transaction_types` - Tipos de transacciones
+- `/usuarios` -get  se lectura para ver usuarios
 

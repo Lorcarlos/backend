@@ -1,9 +1,9 @@
-from ...models.product import Product
+from ...models.product.product import Product
 from ...validator.validator import validate_data
 from ...database import db
 from decimal import Decimal
 from datetime import datetime, timezone
-
+from sqlalchemy.orm import Query
 
 class ProductService:
 
