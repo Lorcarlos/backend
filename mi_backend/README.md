@@ -57,5 +57,21 @@ python run.py
 - `/branches` - Gestión de sucursales
 - `/inventories` - Consulta de inventarios
 - `/transaction_types` - Tipos de transacciones
-- `/usuarios` -get  se lectura para ver usuarios
+- `/users` -get  se lectura para ver usuarios
+- `/user_registration` - registro de personal
+- `/user_registration` - registro de personal
+-  `/user/987654321?eliminate=true` -eliminar usuarios
+-`/user/1472583691` - put
+
+json
+{
+  "name": "María González",
+  "email": "asdriaada@example.com",
+  "username": "adapa",
+  "hashed_password": "securepass123",
+  "document_id":1472583671,
+  "phone_number":3234567891,
+  "role_id": 2,
+  "branch_id": 3
+}
 
