@@ -21,6 +21,7 @@ class Inventory(db.Model):
     )
     deleted_at = db.Column(db.DateTime, nullable=True)
 
+    # Relaciones
     product = db.relationship("Product", backref="inventories")
     branch = db.relationship("Branch", backref="inventories")
 
@@ -28,9 +29,11 @@ class Inventory(db.Model):
         return {
             "id": self.id,
             "product_id": self.product_id,
+            "product_name": self.product.name if self.product else None,
             "branch_id": self.branch_id,
+            "branch_name": self.branch.name if self.branch else None,
             "quantity": self.quantity,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
-            "deleted_at": self.deleted_at
+            "deleted_at": self.deleted_at,
         }

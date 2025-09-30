@@ -17,17 +17,13 @@ from .routes.login.login_routes import auth_bp
 def create_app():
     app = Flask(__name__)
 
-    # 🔑 Configuración JWT
     app.config["JWT_SECRET_KEY"] = "super-secret-key"
 
-    # Inicializar extensiones
     init_db(app)
     JWTManager(app)
 
-    # ✅ CORS habilitado solo para tu frontend
     CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
 
-    # Registrar Blueprints
     app.register_blueprint(product_bp)
     app.register_blueprint(transaction_type_bp)
     app.register_blueprint(supplier_bp)

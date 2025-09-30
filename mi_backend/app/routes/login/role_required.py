@@ -6,7 +6,7 @@ auth_bp = Blueprint("auth", __name__)
 @auth_bp.route("/login", methods=["POST", "OPTIONS"])
 def login_route():
     if request.method == "OPTIONS":
-        # ⚡ Respuesta rápida al preflight
+       
         return {}, 200
 
     data = request.get_json()

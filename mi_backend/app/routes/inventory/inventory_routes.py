@@ -6,20 +6,21 @@ inventory_bp = Blueprint("inventory", __name__, url_prefix="/inventories")
 
 @inventory_bp.route("/", methods=["GET"])
 def get_inventories():
-
     try:
+        branch_id = request.args.get("branch_id", type=int)
+        product_id = request.args.get("product_id", type=int)
 
-        inventories = InventoryService.get_all_inventories()
+        inventories = InventoryService.get_all_inventories(
+            branch_id=branch_id, product_id=product_id
+        )
 
         return jsonify({"ok": True, "inventories": inventories}), 200
 
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
-
 @inventory_bp.route("/<id_inventory>", methods=["GET"])
 def get_inventory_by_id(id_inventory):
-
     try:
         id_inventory = int(id_inventory)
 
