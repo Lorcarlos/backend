@@ -1,7 +1,7 @@
 import re
 from ..models.staff.staff_peticion import AppUser
 from werkzeug.security import generate_password_hash
-# Expresiones regulares generales
+
 regex_email = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
 regex_nit = r"^\d{9}$"
 regex_phone_number = r"^\+?\d{7,15}$"
@@ -76,7 +76,7 @@ def validate_document_id(document_id: int):
     if not doc_str.isdigit():
         raise ValueError("El document_id debe contener solo números.")
 
-    if not (8 <= len(doc_str) <= 12):
+    if not (8 <= len(doc_str) != 10):
         raise ValueError("El document_id debe tener entre 8 y 12 dígitos.")
 
     return True
