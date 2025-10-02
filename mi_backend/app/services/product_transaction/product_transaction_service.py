@@ -4,6 +4,7 @@ from ...services.inventory.inventory_service import InventoryService
 from ...services.branch.branch_service import BranchService
 from ...services.product.product_service import ProductService
 from ...services.supplier.supplier_service import SupplierService
+from ...services.staff.staff import get_user_by_id
 from ...database import db
 from ...validator.validator import validate_data
 from ...utils.date_conversor import parse_transaction_date
@@ -92,6 +93,8 @@ class ProductTransactionService:
         ProductService.get_product_by_id(product_transaction["product_id"])
 
         BranchService.get_branch_by_id(product_transaction["branch_id"])
+
+        get_user_by_id(product_transaction["app_user_id"]) # Validamos si el usuario de la transacción existe
 
         if "supplier_id" in product_transaction and product_transaction["supplier_id"]:
             SupplierService.get_supplier_by_id(product_transaction["supplier_id"])

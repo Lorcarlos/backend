@@ -32,6 +32,7 @@ def create_app():
     app.register_blueprint(branch_bp)
     app.register_blueprint(inventory_bp)
     app.register_blueprint(personal_bp)
+    app.register_blueprint(product_transaction_bp)
     with app.app_context():
         db.create_all()
 
