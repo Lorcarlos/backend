@@ -35,6 +35,8 @@ app/
 ```bash
 pip install -r requirements.txt
 python -m pip install python-dotenv
+python -m pip install bcrypt
+python -m pip install flask-cors <-- conexion entre backend y front
 
 ```
 
@@ -59,9 +61,9 @@ python run.py
 - `/transaction_types` - Tipos de transacciones
 - `/users` -get  se lectura para ver usuarios
 - `/user_registration` - registro de personal
-- `/user_registration` - registro de personal
--  `/user/987654321?eliminate=true` -eliminar usuarios
--`/user/1472583691` - put
+- `/user/987654321?eliminate=true` -eliminar usuarios
+- `/user/1472583691` - put
+- `/auth/login` - loguear
 
 json
 {

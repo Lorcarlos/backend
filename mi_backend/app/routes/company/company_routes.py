@@ -4,7 +4,7 @@ from ...services.company.company_service import CompanyService
 company_bp = Blueprint("company", __name__, url_prefix="/companies")
 
 
-@company_bp.route("/", methods=["GET"])
+@company_bp.route("", methods=["GET"])
 def get_companies():
     try:
         companies = CompanyService.get_all_companies()

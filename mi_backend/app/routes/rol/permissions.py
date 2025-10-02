@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify
 from app.database import get_connection
-from const import const
 product_bp = Blueprint("product", __name__)
 
 @product_bp.route("/permissions", methods=["GET"])
