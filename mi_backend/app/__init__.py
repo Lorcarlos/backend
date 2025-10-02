@@ -6,7 +6,9 @@ from .routes.supplier.supplier_routes import supplier_bp
 from .routes.company.company_routes import company_bp
 from .routes.branch.branch_routes import branch_bp
 from .routes.inventory.inventory_routes import inventory_bp
-from .routes.staff.staff_routes import personal_bp 
+from .routes.staff.staff_routes import personal_bp
+from .routes.product_transaction.product_transaction_routes import product_transaction_bp
+
 
 def create_app():
     app = Flask(__name__)
@@ -20,6 +22,8 @@ def create_app():
     app.register_blueprint(branch_bp)
     app.register_blueprint(inventory_bp)
     app.register_blueprint(personal_bp)
+    app.register_blueprint(product_transaction_bp)
+    
     with app.app_context():
         db.create_all()
 

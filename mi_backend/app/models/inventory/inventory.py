@@ -29,8 +29,8 @@ class Inventory(db.Model):
             "id": self.id,
             "product_id": self.product_id,
             "branch_id": self.branch_id,
-            "quantity": self.quantity,
+            "quantity": float(self.quantity) if self.quantity is not None else None,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
-            "deleted_at": self.deleted_at
+            "deleted_at": self.deleted_at,
         }

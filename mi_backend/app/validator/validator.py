@@ -1,10 +1,13 @@
 import re
 from ..models.staff.staff_peticion import AppUser
 from werkzeug.security import generate_password_hash
+
+
 # Expresiones regulares generales
 regex_email = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
 regex_nit = r"^\d{9}$"
-regex_phone_number = r"^\+?\d{7,15}$"
+regex_phone_number = r"^3\d{9}$"
+regex_document_id = r"^\d{6,10}$"
 
 
 def validate_data(data, required_fields):
@@ -16,10 +19,26 @@ def validate_data(data, required_fields):
             )
 
     for field, expected_type in required_fields.items():
-        if not isinstance(data.get(field), expected_type):
-            raise TypeError(
-                f"El campo '{field}' debe ser de tipo '{expected_type.__name__}'."
-            )
+        value = data.get(field)
+
+        # Caso especial para IDs: debe ser convertible a int
+        if field.endswith("_id") and isinstance(value, str):
+            try:
+                int(value)
+            except (ValueError, TypeError):
+                raise ValueError(f"El campo '{field}' debe ser un número válido")
+
+        if not isinstance(value, expected_type):
+            # Manejar tuplas de tipos
+            if isinstance(expected_type, tuple):
+                type_names = [t.__name__ for t in expected_type]
+                raise TypeError(
+                    f"El campo '{field}' debe ser de tipo '{' o '.join(type_names)}'."
+                )
+            else:
+                raise TypeError(
+                    f"El campo '{field}' debe ser de tipo '{expected_type.__name__}'."
+                )
 
     return True
 
@@ -56,16 +75,11 @@ def validate_supplier_data(supplier):
 
 
 def validate_phone_number(phone_number: int):
+
     phone_str = str(phone_number)
 
-    if not phone_str.isdigit():
-        raise ValueError("El número de teléfono debe contener solo dígitos.")
-
-    if len(phone_str) != 10:
-        raise ValueError("El número de teléfono debe tener exactamente 10 dígitos.")
-
-    if not phone_str.startswith("3"):
-        raise ValueError("El número de teléfono debe empezar con '3'.")
+    if not re.match(regex_phone_number, phone_str):
+        raise ValueError(f"El número de teléfono no es válido.")
 
     return True
 
@@ -73,11 +87,8 @@ def validate_phone_number(phone_number: int):
 def validate_document_id(document_id: int):
     doc_str = str(document_id)
 
-    if not doc_str.isdigit():
-        raise ValueError("El document_id debe contener solo números.")
-
-    if not (8 <= len(doc_str) <= 12):
-        raise ValueError("El document_id debe tener entre 8 y 12 dígitos.")
+    if not re.match(regex_document_id, doc_str):
+        raise ValueError("El document_id no es válido.")
 
     return True
 
@@ -94,7 +105,6 @@ def validate_unique_document_id(document_id: int):
     if existing:
         raise ValueError(f"El documento '{document_id}' ya está registrado.")
     return True
-
 
 
 def hash_password(password_plain):

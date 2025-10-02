@@ -2,7 +2,7 @@ from ...database import db
 from datetime import datetime, timezone
 
 
-class Transaction_type(db.Model):
+class TransactionType(db.Model):
 
     __tablename__ = "transaction_type"
 

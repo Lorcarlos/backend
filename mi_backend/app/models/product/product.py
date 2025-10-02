@@ -28,7 +28,7 @@ class Product(db.Model):
             "id": self.id,
             "name": self.name,
             "size": self.size,
-            "price": self.price,
+            "price": float(self.price) if self.price is not None else None,
             "description": self.description,
             "is_active": self.is_active,
             "created_at": self.created_at,

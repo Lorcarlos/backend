@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from ...database import db
 from ...services.transaction_type.transaction_type_service import (
-    Transaction_type_service,
+    TransactionTypeService,
 )
 
 transaction_type_bp = Blueprint(
@@ -12,7 +12,7 @@ transaction_type_bp = Blueprint(
 @transaction_type_bp.route("/", methods=["GET"])
 def get_transaction_types():
     try:
-        transaction_types = Transaction_type_service.get_all_transaction_types()
+        transaction_types = TransactionTypeService.get_all_transaction_types()
         return jsonify({"ok": True, "transaction_types": transaction_types}), 200
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
@@ -29,7 +29,7 @@ def get_transaction_type(id_transaction_type):
                 400,
             )
 
-        transaction_type = Transaction_type_service.get_transaction_type_by_id(
+        transaction_type = TransactionTypeService.get_transaction_type_by_id(
             id_transaction_type
         )
 

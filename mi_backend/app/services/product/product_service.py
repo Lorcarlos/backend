@@ -20,7 +20,7 @@ class ProductService:
         required_fields = {
             "name": str,
             "size": str,
-            "price": str,
+            "price": (int, float),
             "description": str,
         }
 
@@ -41,11 +41,7 @@ class ProductService:
         if product_exists:
             raise ValueError("El producto ingresado ya existe")
 
-        try:
-            price = Decimal(product["price"])
-
-        except Exception:
-            raise ValueError("El precio debe ser un número válido")
+        price = Decimal(product["price"])
 
         new_product = Product(
             name=product["name"],
@@ -95,10 +91,7 @@ class ProductService:
                 raise ValueError("Se intentó actualizar un campo inválido")
 
             if key == "price":
-                try:
-                    value = Decimal(value)
-                except Exception:
-                    raise ValueError("El precio debe ser un número válido")
+                value = Decimal(value)
 
             setattr(product, key, value)
 
