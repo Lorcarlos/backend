@@ -1,9 +1,9 @@
 from flask import Blueprint, jsonify, request
 from ...services.inventory.inventory_service import InventoryService
-
+from flask_cors import CORS
 inventory_bp = Blueprint("inventory", __name__, url_prefix="/inventories")
 
-
+CORS(inventory_bp)
 @inventory_bp.route("/", methods=["GET"])
 def get_inventories():
     try:
@@ -19,6 +19,7 @@ def get_inventories():
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
+ 
 @inventory_bp.route("/<id_inventory>", methods=["GET"])
 def get_inventory_by_id(id_inventory):
     try:
