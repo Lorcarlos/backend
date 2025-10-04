@@ -1,5 +1,6 @@
 from ...models.supplier.supplier import Supplier
-from ...validator.validator import validate_data, validate_supplier_data
+from ...utils.validator import validate_data, validate_supplier_data
+from ...utils.soft_delete_handler import SoftDeleteHandler
 from ...database import db
 from datetime import datetime, timezone
 
@@ -47,28 +48,14 @@ class SupplierService:
 
         validate_supplier_data(supplier)
 
-        supplier_exists = Supplier.query.filter(
-            Supplier.deleted_at.is_(None), Supplier.nit == supplier["nit"]
-        ).first()
-
-        if supplier_exists:
-            raise ValueError("El proveedor ya existe")
-
-        new_supplier = Supplier(
-            name=supplier["name"],
-            nit=supplier["nit"],
-            email=supplier["email"],
-            contact_name=supplier["contact_name"],
-            phone_number=supplier["phone_number"],
-            address=supplier["address"],
-            description=supplier["description"],
-            is_active=supplier.get("is_active", True),
+        # Llama al handler que verifica si el elemento existe y está activo o si existe y está soft_deleted
+        return SoftDeleteHandler.create_or_restore(
+            model=Supplier,
+            unique_filters=Supplier.nit == supplier["nit"],
+            data=supplier,
+            restore_fn=SupplierService.restore_deleted_supplier,
+            create_fn=SupplierService.create_fresh_supplier,
         )
-
-        db.session.add(new_supplier)
-        db.session.commit()
-
-        return new_supplier
 
     @staticmethod
     def update_supplier_by_id(id_supplier, data):
@@ -87,13 +74,12 @@ class SupplierService:
         ]
 
         validate_supplier_data(data)
-        
+
         for key, value in data.items():
             if key not in allowed_fields:
                 raise ValueError("Se intentó actualizar un campo inválido")
 
             setattr(supplier, key, value)
-
 
         supplier_exists = Supplier.query.filter(
             Supplier.deleted_at.is_(None),
@@ -118,3 +104,45 @@ class SupplierService:
         db.session.commit()
 
         return True
+
+    @staticmethod
+    def restore_deleted_supplier(
+        existing_supplier: Supplier, new_data: dict
+    ) -> Supplier:
+        """Restaura proveedor eliminado actualizando todos los campos pero manteniendo created_at original"""
+        # Actualizar todos los campos de datos
+        existing_supplier.name = new_data["name"].strip().lower()
+        existing_supplier.nit = new_data["nit"]
+        existing_supplier.email = new_data["email"].strip().lower()
+        existing_supplier.contact_name = new_data["contact_name"].strip().lower()
+        existing_supplier.phone_number = new_data["phone_number"]
+        existing_supplier.address = new_data["address"].strip()
+        existing_supplier.description = new_data["description"]
+        existing_supplier.is_active = new_data.get("is_active", True)
+
+        # Solo actualizar updated_at y limpiar deleted_at
+        existing_supplier.updated_at = datetime.now(timezone.utc)
+        existing_supplier.deleted_at = None
+        # created_at se mantiene igual (cuándo se creó originalmente)
+
+        db.session.commit()
+        return existing_supplier
+
+    @staticmethod
+    def create_fresh_supplier(supplier_data: dict) -> Supplier:
+        """Crea un proveedor completamente nuevo"""
+        new_supplier = Supplier(
+            name=supplier_data["name"],
+            nit=supplier_data["nit"],
+            email=supplier_data["email"],
+            contact_name=supplier_data["contact_name"],
+            phone_number=supplier_data["phone_number"],
+            address=supplier_data["address"],
+            description=supplier_data["description"],
+            is_active=supplier_data.get("is_active", True),
+        )
+
+        db.session.add(new_supplier)
+        db.session.commit()
+
+        return new_supplier

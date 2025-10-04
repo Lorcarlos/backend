@@ -2,6 +2,10 @@
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from .database import init_db, db
+import os
+
+# Importar todos los modelos para que SQLAlchemy los reconozca
+from .models import *
 
 # Importar los Blueprints
 from .routes.product.product_routes import product_bp
@@ -18,7 +22,7 @@ from .routes.product_transaction.product_transaction_routes import product_trans
 def create_app():
     app = Flask(__name__)
 
-    app.config["JWT_SECRET_KEY"] = "super-secret-key"
+    app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "super-secret-key")
 
     init_db(app)
     JWTManager(app)

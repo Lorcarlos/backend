@@ -8,13 +8,12 @@ from ...services.staff.staff import (
     soft_delete_user_if_requested,
     update_user_service,
 )
-from ...validator.validator import validate_data
 
 
 personal_bp = Blueprint("personal_bp", __name__)
 
 
-@personal_bp.route("/users", methods=["GET"])
+@personal_bp.route("/users/", methods=["GET"])
 def get_all_users():
     try:
         users = AppUser.query.filter_by(deleted_at=None).all()
@@ -81,6 +80,9 @@ def user_registration():
             ),
             200,
         )
+
+    except ValueError as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
 
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500

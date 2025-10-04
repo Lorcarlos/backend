@@ -1,9 +1,11 @@
 from ...models.product.product import Product
-from ...validator.validator import validate_data
+from ...utils.validator import validate_data
+from ...utils.soft_delete_handler import SoftDeleteHandler
 from ...database import db
 from decimal import Decimal
 from datetime import datetime, timezone
-from sqlalchemy.orm import Query
+from sqlalchemy import and_
+
 
 class ProductService:
 
@@ -32,29 +34,16 @@ class ProductService:
         if len(product["name"]) < 3:
             raise ValueError("El nombre del producto no puede ser menor a 3 caracteres")
 
-        product_exists = Product.query.filter(
-            Product.deleted_at.is_(None),
-            Product.name == product["name"],
-            Product.size == product["size"],
-        ).first()
-
-        if product_exists:
-            raise ValueError("El producto ingresado ya existe")
-
-        price = Decimal(product["price"])
-
-        new_product = Product(
-            name=product["name"],
-            size=product["size"],
-            price=price,
-            description=product["description"],
-            is_active=product.get("is_active", True),
+        # Llama al handler que verifica si el elemento existe y está activo o si existe y está soft_deleted
+        return SoftDeleteHandler.create_or_restore(
+            model=Product,
+            unique_filters=and_(
+                Product.name == product["name"], Product.size == product["size"]
+            ),
+            data=product,
+            restore_fn=ProductService.restore_deleted_product,
+            create_fn=ProductService.create_fresh_product,
         )
-
-        db.session.add(new_product)
-        db.session.commit()
-
-        return new_product
 
     @staticmethod
     def delete_product_by_id(id_product):
@@ -115,3 +104,39 @@ class ProductService:
         db.session.commit()
 
         return product
+
+    @staticmethod
+    def restore_deleted_product(existing_product: Product, new_data: dict) -> Product:
+        """Restaura producto eliminado actualizando todos los campos pero manteniendo created_at original"""
+        # Actualizar todos los campos de datos
+        existing_product.name = new_data["name"].strip().lower()
+        existing_product.size = new_data["size"].strip().lower()
+        existing_product.price = Decimal(new_data["price"])
+        existing_product.description = new_data["description"]
+        existing_product.is_active = new_data.get("is_active", True)
+
+        # Solo actualizar updated_at y limpiar deleted_at
+        existing_product.updated_at = datetime.now(timezone.utc)
+        existing_product.deleted_at = None
+        # created_at se mantiene igual (cuándo se creó originalmente)
+
+        db.session.commit()
+        return existing_product
+
+    @staticmethod
+    def create_fresh_product(product_data: dict) -> Product:
+        """Crea un producto completamente nuevo"""
+        price = Decimal(product_data["price"])
+
+        new_product = Product(
+            name=product_data["name"],
+            size=product_data["size"],
+            price=price,
+            description=product_data["description"],
+            is_active=product_data.get("is_active", True),
+        )
+
+        db.session.add(new_product)
+        db.session.commit()
+
+        return new_product

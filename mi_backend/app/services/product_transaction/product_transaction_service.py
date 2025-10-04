@@ -6,7 +6,7 @@ from ...services.product.product_service import ProductService
 from ...services.supplier.supplier_service import SupplierService
 from ...services.staff.staff import get_user_by_id
 from ...database import db
-from ...validator.validator import validate_data
+from ...utils.validator import validate_data
 from ...utils.date_conversor import parse_transaction_date
 from decimal import Decimal
 

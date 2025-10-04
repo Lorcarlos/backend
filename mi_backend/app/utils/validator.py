@@ -93,20 +93,6 @@ def validate_document_id(document_id: int):
     return True
 
 
-def validate_unique_email(email: str):
-    existing = AppUser.query.filter_by(email=email).first()
-    if existing:
-        raise ValueError(f"El email '{email}' ya está registrado.")
-    return True
-
-
-def validate_unique_document_id(document_id: int):
-    existing = AppUser.query.filter_by(document_id=document_id).first()
-    if existing:
-        raise ValueError(f"El documento '{document_id}' ya está registrado.")
-    return True
-
-
 def hash_password(password_plain):
     if not password_plain:
         return None

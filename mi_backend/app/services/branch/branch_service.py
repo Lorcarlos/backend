@@ -1,4 +1,4 @@
-from ...models.brach.branch import Branch
+from ...models.branch.branch import Branch
 
 
 class BranchService:
