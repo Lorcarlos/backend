@@ -29,6 +29,7 @@ def create_app():
 
     CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
 
+    # Registrar todos los blueprints
     app.register_blueprint(product_bp)
     app.register_blueprint(transaction_type_bp)
     app.register_blueprint(supplier_bp)
@@ -37,6 +38,7 @@ def create_app():
     app.register_blueprint(inventory_bp)
     app.register_blueprint(personal_bp)
     app.register_blueprint(product_transaction_bp)
+    app.register_blueprint(auth_bp)  
     with app.app_context():
         db.create_all()
 
