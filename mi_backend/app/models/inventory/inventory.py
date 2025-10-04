@@ -1,6 +1,7 @@
 from ...database import db
 from datetime import datetime, timezone
 
+
 class Inventory(db.Model):
     __tablename__ = "inventory"
 
@@ -24,7 +25,6 @@ class Inventory(db.Model):
     product = db.relationship("Product", backref="inventories")
     branch = db.relationship("Branch", backref="inventories")
 
-    # 👇 Asegúrate que este método esté dentro de la clase (indentación con 4 espacios)
     def to_dict(self):
         return {
             "id": self.id,

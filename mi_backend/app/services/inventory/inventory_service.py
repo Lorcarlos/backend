@@ -105,9 +105,3 @@ class InventoryService:
             quantity += product_transaction["quantity"]
 
         return quantity
-    @staticmethod
-    def get_inventory_by_id(id_inventory):
-        inventory = Inventory.query.get(id_inventory)
-        if not inventory:
-            raise ValueError("Inventario no encontrado")
-        return inventory.to_dict() 
