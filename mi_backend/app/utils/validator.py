@@ -49,7 +49,7 @@ def validate_supplier_data(supplier):
     """
     for key, value in supplier.items():
 
-        if key in ("name", "contact_name"):
+        if key in ("name", "contact_name", "city"):
             if len(value) < 3:
                 raise ValueError(
                     f"El {key} del proveedor no puede ser menor a 3 caracteres."

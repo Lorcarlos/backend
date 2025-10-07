@@ -1,9 +1,10 @@
 from flask import Blueprint, jsonify, request
 from ...services.supplier.supplier_service import SupplierService
+from flask_cors import CORS
 
 supplier_bp = Blueprint("supplier", __name__, url_prefix="/suppliers")
 
-
+CORS(supplier_bp)
 @supplier_bp.route("/", methods=["GET"])
 def get_suppliers():
 

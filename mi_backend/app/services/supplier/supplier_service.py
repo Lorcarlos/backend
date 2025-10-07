@@ -36,6 +36,7 @@ class SupplierService:
             "contact_name": str,
             "phone_number": str,
             "address": str,
+            "city": str,
             "description": str,
         }
 
@@ -45,6 +46,7 @@ class SupplierService:
         supplier["email"] = supplier["email"].strip().lower()
         supplier["contact_name"] = supplier["contact_name"].strip().lower()
         supplier["address"] = supplier["address"].strip()
+        supplier["city"] = supplier["city"].strip().lower()
 
         validate_supplier_data(supplier)
 
@@ -69,6 +71,7 @@ class SupplierService:
             "contact_name",
             "phone_number",
             "address",
+            "city",
             "description",
             "is_active",
         ]
@@ -117,6 +120,7 @@ class SupplierService:
         existing_supplier.contact_name = new_data["contact_name"].strip().lower()
         existing_supplier.phone_number = new_data["phone_number"]
         existing_supplier.address = new_data["address"].strip()
+        existing_supplier.city = new_data["city"].strip().lower()
         existing_supplier.description = new_data["description"]
         existing_supplier.is_active = new_data.get("is_active", True)
 
@@ -138,6 +142,7 @@ class SupplierService:
             contact_name=supplier_data["contact_name"],
             phone_number=supplier_data["phone_number"],
             address=supplier_data["address"],
+            city=supplier_data["city"],
             description=supplier_data["description"],
             is_active=supplier_data.get("is_active", True),
         )

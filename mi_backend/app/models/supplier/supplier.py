@@ -12,6 +12,7 @@ class Supplier(db.Model):
     contact_name = db.Column(db.String(100), nullable=False)
     phone_number = db.Column(db.String(20), nullable=False)
     address = db.Column(db.String(100), nullable=False)
+    city = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(500), nullable=False)
     is_active = db.Column(db.Boolean, nullable=False)
 
@@ -37,6 +38,7 @@ class Supplier(db.Model):
             "contact_name": self.contact_name,
             "phone_number": self.phone_number,
             "address": self.address,
+            "city": self.city,
             "description": self.description,
             "is_active": self.is_active,
             "created_at": self.created_at,
