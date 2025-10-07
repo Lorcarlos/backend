@@ -24,12 +24,11 @@ def create_new_user(data: dict) -> AppUser:
         "branch_id": int,
     }
 
-    # Validaciones
     validate_data(data, required_fields)
     validate_phone_number(data["phone_number"])
     validate_document_id(data["document_id"])
-    validate_unique_email(data["email"])
     validate_unique_document_id(data["document_id"])
+    
 
     new_user = AppUser(
         name=data["name"],
@@ -43,10 +42,13 @@ def create_new_user(data: dict) -> AppUser:
     )
 
     db.session.add(new_user)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        raise e
 
     return new_user
-
 
 @staticmethod
 def get_user_by_id(user_id):

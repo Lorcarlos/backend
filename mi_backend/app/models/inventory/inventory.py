@@ -20,11 +20,9 @@ class Inventory(db.Model):
     )
     deleted_at = db.Column(db.DateTime, nullable=True)
 
-    # Relaciones
     product = db.relationship("Product", backref="inventories")
     branch = db.relationship("Branch", backref="inventories")
 
-    # 👇 Asegúrate que este método esté dentro de la clase (indentación con 4 espacios)
     def to_dict(self):
         return {
             "id": self.id,

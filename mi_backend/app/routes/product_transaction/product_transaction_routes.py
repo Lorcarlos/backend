@@ -10,14 +10,13 @@ product_transaction_bp = Blueprint(
 
 @product_transaction_bp.route("/", methods=["GET"])
 def get_product_trasanctions():
-
     try:
         product_transactions = ProductTransactionService.get_all_products_transactions()
 
         return jsonify({"ok": True, "product_transactions": product_transactions}), 200
 
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+        return jsonify({"ok": False, "error": str(e)} ), 500
 
 
 @product_transaction_bp.route("/<id_product_transaction>", methods=["GET"])
