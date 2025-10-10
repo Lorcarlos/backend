@@ -1,6 +1,7 @@
 from ...models.product.product import Product
 from ...utils.validator import validate_data
 from ...utils.soft_delete_handler import SoftDeleteHandler
+from ...services.log.log_service import LogService
 from ...database import db
 from decimal import Decimal
 from datetime import datetime, timezone
@@ -32,6 +33,12 @@ class ProductService:
         product["size"] = product["size"].strip().lower()
 
         if len(product["name"]) < 3:
+            LogService.create_log(
+                {
+                    "module": f"{ProductService.__name__}.{ProductService.create_product_service.__name__}",
+                    "message": "Se ingresó un nombre de producto de menos de 3 caracteres",
+                }
+            )
             raise ValueError("El nombre del producto no puede ser menor a 3 caracteres")
 
         # Llama al handler que verifica si el elemento existe y está activo o si existe y está soft_deleted
@@ -64,6 +71,12 @@ class ProductService:
         ).first()
 
         if product is None:
+            LogService.create_log(
+                {
+                    "module": f"{ProductService.__name__}.{ProductService.get_product_by_id.__name__}",
+                    "message": "No se encontró el producto buscado por id",
+                }
+            )
             raise ValueError("Producto no encontrado")
 
         return product
@@ -77,6 +90,12 @@ class ProductService:
 
         for key, value in data.items():
             if key not in allowed_fields:
+                LogService.create_log(
+                    {
+                        "module": f"{ProductService.__name__}.{ProductService.update_product_by_id.__name__}",
+                        "message": f"Se intentó actualizar {key} del producto, lo cuál no está permitido",
+                    }
+                )
                 raise ValueError("Se intentó actualizar un campo inválido")
 
             if key == "price":
@@ -88,6 +107,12 @@ class ProductService:
         product.size = product.size.strip().lower()
 
         if len(product.name) < 3:
+            LogService.create_log(
+                {
+                    "module": f"{ProductService.__name__}.{ProductService.update_product_by_id.__name__}",
+                    "message": "Se ingresó un nombre de producto de menos de 3 caracteres",
+                }
+            )
             raise ValueError("El nombre del producto no puede ser menor a 3 caracteres")
 
         with db.session.no_autoflush:
@@ -99,6 +124,12 @@ class ProductService:
             ).first()
 
             if product_exists:
+                LogService.create_log(
+                    {
+                        "module": f"{ProductService.__name__}.{ProductService.update_product_by_id.__name__}",
+                        "message": "Se intentó actualizar un producto con un nombre y tamaño existente",
+                    }
+                )
                 raise ValueError("Ya existe otro producto con el mismo nombre y tamaño")
 
         db.session.commit()

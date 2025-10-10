@@ -1,4 +1,5 @@
 from ...models.inventory.inventory import Inventory
+from ...services.log.log_service import LogService
 from ...database import db
 
 
@@ -12,6 +13,12 @@ class InventoryService:
         )
 
         if inventoryExists:
+            LogService.create_log(
+                {
+                    "module": f"{InventoryService.__name__}.{InventoryService._create_inventory.__name__}",
+                    "message": f"El inventario para el producto con ID {inventory['product_id']} en la sede con ID {inventory['branch_id']} ya existe.",
+                }
+            )
             raise ValueError(
                 f"El inventario para el producto con ID {inventory['product_id']} en la sede con ID {inventory['branch_id']} ya existe."
             )
@@ -46,6 +53,12 @@ class InventoryService:
         ).first()
 
         if inventory is None:
+            LogService.create_log(
+                {
+                    "module": f"{InventoryService.__name__}.{InventoryService.get_inventory_by_id.__name__}",
+                    "message": "No se encontró el inventario buscado por id",
+                }
+            )
             raise ValueError("No se encontró el inventario")
 
         return inventory.to_dict()
@@ -80,6 +93,12 @@ class InventoryService:
                     }
                 )
             else:
+                LogService.create_log(
+                    {
+                        "module": f"{InventoryService.__name__}.{InventoryService.update_inventory.__name__}",
+                        "message": "Se intentó actualizar un producto en un inventario que no existe",
+                    }
+                )
                 raise ValueError("No existe inventario para este producto en esta sede")
 
         inventory.quantity = InventoryService.adjust_quantity(
@@ -95,6 +114,12 @@ class InventoryService:
             or transaction_type["name"] == "ajuste negativo"
         ):
             if quantity < product_transaction["quantity"]:
+                LogService.create_log(
+                    {
+                        "module": f"{InventoryService.__name__}.{InventoryService.adjust_quantity.__name__}",
+                        "message": "Se intentó sacar más material del disponible en el inventario",
+                    }
+                )
                 raise ValueError("No hay suficiente stock en el inventario")
             quantity -= product_transaction["quantity"]
 

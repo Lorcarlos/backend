@@ -1,6 +1,7 @@
 from ...models.supplier.supplier import Supplier
 from ...utils.validator import validate_data, validate_supplier_data
 from ...utils.soft_delete_handler import SoftDeleteHandler
+from ...services.log.log_service import LogService
 from ...database import db
 from datetime import datetime, timezone
 
@@ -22,6 +23,12 @@ class SupplierService:
         ).first()
 
         if supplier is None:
+            LogService.create_log(
+                {
+                    "module": f"{SupplierService.__name__}.{SupplierService.get_supplier_by_id.__name__}",
+                    "message": "No se encontró el proveedor buscado por id",
+                }
+            )
             raise ValueError("El proveedor no se encontró")
 
         return supplier
@@ -80,6 +87,12 @@ class SupplierService:
 
         for key, value in data.items():
             if key not in allowed_fields:
+                LogService.create_log(
+                    {
+                        "module": f"{SupplierService.__name__}.{SupplierService.update_supplier_by_id.__name__}",
+                        "message": f"Se intentó actualizar {key} del proveedor, lo cual no está permitido",
+                    }
+                )
                 raise ValueError("Se intentó actualizar un campo inválido")
 
             setattr(supplier, key, value)
@@ -91,6 +104,12 @@ class SupplierService:
         ).first()
 
         if supplier_exists:
+            LogService.create_log(
+                {
+                    "module": f"{SupplierService.__name__}.{SupplierService.update_supplier_by_id.__name__}",
+                    "message": "Se intentó actualizar el nit de un proveedor a uno que ya existe",
+                }
+            )
             raise ValueError("Ya existe otro proveedor con el mismo nit")
 
         db.session.commit()

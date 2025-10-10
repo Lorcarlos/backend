@@ -1,4 +1,5 @@
 from ...models.branch.branch import Branch
+from ...services.log.log_service import LogService
 
 
 class BranchService:
@@ -18,6 +19,12 @@ class BranchService:
         ).first()
 
         if branch is None:
+            LogService.create_log(
+                {
+                    "module": f"{BranchService.__name__}.{BranchService.get_branch_by_id.__name__}",
+                    "message": "No se encontró la sede buscada por id",
+                }
+            )
             raise ValueError("No se encontró la sede")
 
         return branch.to_dict()

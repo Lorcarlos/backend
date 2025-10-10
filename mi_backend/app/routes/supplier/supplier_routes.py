@@ -1,10 +1,13 @@
 from flask import Blueprint, jsonify, request
 from ...services.supplier.supplier_service import SupplierService
+from ...services.log.log_service import LogService
 from flask_cors import CORS
 
 supplier_bp = Blueprint("supplier", __name__, url_prefix="/suppliers")
 
 CORS(supplier_bp)
+
+
 @supplier_bp.route("/", methods=["GET"])
 def get_suppliers():
 
@@ -13,6 +16,12 @@ def get_suppliers():
         return jsonify({"ok": True, "suppliers": suppliers}), 200
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{get_suppliers.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -35,6 +44,12 @@ def get_supplier(id_supplier):
         return jsonify({"ok": False, "error": str(e)}), 404
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{get_supplier.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -49,6 +64,12 @@ def create_supplier():
     except (ValueError, TypeError) as e:
         return jsonify({"ok": False, "error": str(e)}), 400
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{create_supplier.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -72,6 +93,12 @@ def update_supplier(id_supplier):
         return jsonify({"ok": False, "error": str(e)}), 400
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{update_supplier.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -95,4 +122,10 @@ def delete_supplier(id_supplier):
         return jsonify({"ok": False, "error": str(e)}), 404
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{delete_supplier.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500

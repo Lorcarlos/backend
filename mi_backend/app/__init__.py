@@ -16,6 +16,7 @@ from .routes.branch.branch_routes import branch_bp
 from .routes.inventory.inventory_routes import inventory_bp
 from .routes.staff.staff_routes import personal_bp
 from .routes.login.login_routes import auth_bp
+from .routes.log.log_routes import log_bp
 from .routes.product_transaction.product_transaction_routes import (
     product_transaction_bp,
 )
@@ -45,6 +46,8 @@ def create_app():
     app.register_blueprint(personal_bp)
     app.register_blueprint(product_transaction_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(log_bp)
+
     with app.app_context():
         db.create_all()
 

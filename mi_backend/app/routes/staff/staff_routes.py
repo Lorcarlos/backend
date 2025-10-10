@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify
-from werkzeug.security import generate_password_hash
-from ...database import db
+from ...services.log.log_service import LogService
 from ...models.staff.staff_peticion import AppUser
 from ...services.staff.staff import (
     get_user_by_id,
@@ -39,6 +38,12 @@ def get_all_users():
         return jsonify({"ok": True, "users": users_list}), 200
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{get_all_users.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -53,6 +58,12 @@ def get_user(user_id):
     except ValueError as e:
         return jsonify({"ok": False, "error": str(e)}), 400
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{get_user.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -85,6 +96,12 @@ def user_registration():
         return jsonify({"ok": False, "error": str(e)}), 400
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{user_registration.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -112,6 +129,12 @@ def delete_user(document_id):
         )
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{delete_user.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -122,4 +145,10 @@ def update_user(document_id):
         result = update_user_service(document_id, data)
         return jsonify(result), result.get("status", 200)
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{update_user.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500

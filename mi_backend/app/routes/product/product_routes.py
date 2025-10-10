@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from ...services.product.product_service import ProductService
+from ...services.log.log_service import LogService
 
 product_bp = Blueprint("product", __name__, url_prefix="/products")
 
@@ -11,6 +12,12 @@ def get_products():
         return jsonify({"ok": True, "products": products}), 200
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{get_products.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -24,6 +31,12 @@ def create_product():
     except (ValueError, TypeError) as e:
         return jsonify({"ok": False, "error": str(e)}), 400
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{create_product.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -46,6 +59,12 @@ def delete_product(id_product):
         return jsonify({"ok": False, "error": str(e)}), 404
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{delete_product.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -68,6 +87,12 @@ def get_product(id_product):
         return jsonify({"ok": False, "error": str(e)}), 404
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{get_product.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -90,4 +115,10 @@ def update_product(id_product):
         return jsonify({"ok": False, "error": str(e)}), 400
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{update_product.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500

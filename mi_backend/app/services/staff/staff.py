@@ -1,6 +1,7 @@
 from ...database import db
 from datetime import datetime, timezone
 from ...models.staff.staff_peticion import AppUser
+from ...services.log.log_service import LogService
 from ...utils.validator import (
     validate_data,
     validate_phone_number,
@@ -55,6 +56,12 @@ def get_user_by_id(user_id):
     ).first()
 
     if user is None:
+        LogService.create_log(
+            {
+                "module": f"{get_user_by_id.__name__}",
+                "message": "No se encontró el usuario buscado por id",
+            }
+        )
         raise ValueError("Usuario no encontrado")
 
     return user

@@ -1,5 +1,6 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify
 from ...services.company.company_service import CompanyService
+from ...services.log.log_service import LogService
 
 company_bp = Blueprint("company", __name__, url_prefix="/companies")
 
@@ -12,6 +13,12 @@ def get_companies():
         return jsonify({"ok": True, "companies": companies}), 200
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{get_companies.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -33,4 +40,10 @@ def get_company_by_id(id_company):
     except ValueError as e:
         return jsonify({"ok": False, "error": str(e)}), 404
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{get_company_by_id.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500

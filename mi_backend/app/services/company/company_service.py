@@ -1,4 +1,5 @@
 from ...models.company.company import Company
+from ...services.log.log_service import LogService
 
 
 class CompanyService:
@@ -18,6 +19,12 @@ class CompanyService:
         ).first()
 
         if company is None:
+            LogService.create_log(
+                {
+                    "module": f"{CompanyService.__name__}.{CompanyService.get_company_by_id.__name__}",
+                    "message": "No se encontró la compañía buscada por id",
+                }
+            )
             raise ValueError("No se encontró la compañía")
 
         return company.to_dict()

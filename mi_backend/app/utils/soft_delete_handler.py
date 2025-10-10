@@ -1,3 +1,5 @@
+from ..services.log.log_service import LogService
+
 class SoftDeleteHandler:
 
     @staticmethod
@@ -16,6 +18,12 @@ class SoftDeleteHandler:
         ).first()
 
         if existing_active:
+            LogService.create_log(
+                {
+                    "module": f"{SoftDeleteHandler.__name__}.{SoftDeleteHandler.create_or_restore.__name__}",
+                    "message": f"Se intentó crear el modelo {model.__name__}, el cual ya existe en el sistema",
+                }
+            )
             raise ValueError(f"El {model.__name__} ya existe en el sistema")
 
         # Verificar si existe eliminado
