@@ -54,30 +54,44 @@ class InventoryService:
 
     @staticmethod
     def update_inventory(product_transaction, transaction_type):
-        # ... (código existente) ...
-        inventory = InventoryService.get_inventory_by_product_and_branch(
-            product_transaction["product_id"], product_transaction["branch_id"]
-        )
+        from app import db
+        from app.models.inventory import Inventory
 
-        if not inventory:
-            if (
-                transaction_type["direction"] == "IN"
-                or transaction_type["name"] == "ajuste positivo"
-            ):
-                inventory = InventoryService._create_inventory(
-                    {
-                        "product_id": product_transaction["product_id"],
-                        "branch_id": product_transaction["branch_id"],
-                    }
+        try:
+            product_id = product_transaction["product_id"]
+            branch_id = product_transaction["branch_id"]
+            quantity = product_transaction["quantity"]
+
+            # Buscar inventario existente
+            inventory = Inventory.query.filter_by(
+                product_id=product_id,
+                branch_id=branch_id
+            ).first()
+
+            # Si no existe, crearlo con cantidad 0
+            if inventory is None:
+                inventory = Inventory(
+                    product_id=product_id,
+                    branch_id=branch_id,
+                    quantity=0
                 )
-            else:
-                raise ValueError("No existe inventario para este producto en esta sede")
+                db.session.add(inventory)
+                db.session.flush()  # asegura que tenga ID antes del commit
 
-        inventory.quantity = InventoryService.adjust_quantity(
-            transaction_type, product_transaction, inventory.quantity
-        )
+            # Actualizar cantidad según tipo de transacción
+            if transaction_type.name.upper() == "ENTRADA":
+                inventory.quantity += quantity
+            elif transaction_type.name.upper() == "SALIDA":
+                inventory.quantity -= quantity
 
-        db.session.add(inventory)
+            db.session.commit()
+            return inventory
+
+        except Exception as e:
+            db.session.rollback()
+            raise e
+
+
 
     @staticmethod
     def adjust_quantity(transaction_type, product_transaction, quantity):

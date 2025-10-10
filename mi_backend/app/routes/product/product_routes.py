@@ -16,7 +16,6 @@ def get_products():
 
 @product_bp.route("/", methods=["POST"])
 def create_product():
-
     try:
         product = request.json
         new_product = ProductService.create_product_service(product)

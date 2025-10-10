@@ -28,10 +28,9 @@ class Inventory(db.Model):
             "id": self.id,
             "product_id": self.product_id,
             "product_name": self.product.name if self.product else None,
+            "price":self.product.price if self.product else None,
             "product_size": self.product.size if self.product else None,
             "branch_id": self.branch_id,
             "quantity": float(self.quantity) if self.quantity is not None else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "deleted_at": self.deleted_at.isoformat() if self.deleted_at else None,
         }
