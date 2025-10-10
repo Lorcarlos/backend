@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from ...services.inventory.inventory_service import InventoryService
+from ...services.log.log_service import LogService
 from flask_cors import CORS
 
 inventory_bp = Blueprint("inventory", __name__, url_prefix="/inventories")
@@ -19,6 +20,12 @@ def get_inventories():
         return jsonify({"ok": True, "inventories": inventories}), 200
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{get_inventories.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 @inventory_bp.route("/levels", methods=["GET"])

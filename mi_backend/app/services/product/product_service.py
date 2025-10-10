@@ -1,9 +1,11 @@
 from ...models.product.product import Product
-from ...models.inventory.inventory import Inventory  # ✅ importa Inventory
-from ...validator.validator import validate_data
+from ...utils.validator import validate_data
+from ...utils.soft_delete_handler import SoftDeleteHandler
+from ...services.log.log_service import LogService
 from ...database import db
 from decimal import Decimal
 from datetime import datetime, timezone
+from sqlalchemy import and_
 
 
 class ProductService:
@@ -29,6 +31,12 @@ class ProductService:
         product["size"] = product["size"].strip().lower()
 
         if len(product["name"]) < 3:
+            LogService.create_log(
+                {
+                    "module": f"{ProductService.__name__}.{ProductService.create_product_service.__name__}",
+                    "message": "Se ingresó un nombre de producto de menos de 3 caracteres",
+                }
+            )
             raise ValueError("El nombre del producto no puede ser menor a 3 caracteres")
 
         product_exists = Product.query.filter(
@@ -95,6 +103,12 @@ class ProductService:
         ).first()
 
         if product is None:
+            LogService.create_log(
+                {
+                    "module": f"{ProductService.__name__}.{ProductService.get_product_by_id.__name__}",
+                    "message": "No se encontró el producto buscado por id",
+                }
+            )
             raise ValueError("Producto no encontrado")
 
         return product
@@ -106,6 +120,12 @@ class ProductService:
 
         for key, value in data.items():
             if key not in allowed_fields:
+                LogService.create_log(
+                    {
+                        "module": f"{ProductService.__name__}.{ProductService.update_product_by_id.__name__}",
+                        "message": f"Se intentó actualizar {key} del producto, lo cuál no está permitido",
+                    }
+                )
                 raise ValueError("Se intentó actualizar un campo inválido")
 
             if key == "price":
@@ -117,6 +137,12 @@ class ProductService:
         product.size = product.size.strip().lower()
 
         if len(product.name) < 3:
+            LogService.create_log(
+                {
+                    "module": f"{ProductService.__name__}.{ProductService.update_product_by_id.__name__}",
+                    "message": "Se ingresó un nombre de producto de menos de 3 caracteres",
+                }
+            )
             raise ValueError("El nombre del producto no puede ser menor a 3 caracteres")
 
         with db.session.no_autoflush:
@@ -128,7 +154,50 @@ class ProductService:
             ).first()
 
             if product_exists:
+                LogService.create_log(
+                    {
+                        "module": f"{ProductService.__name__}.{ProductService.update_product_by_id.__name__}",
+                        "message": "Se intentó actualizar un producto con un nombre y tamaño existente",
+                    }
+                )
                 raise ValueError("Ya existe otro producto con el mismo nombre y tamaño")
 
         db.session.commit()
+
         return product
+
+    @staticmethod
+    def restore_deleted_product(existing_product: Product, new_data: dict) -> Product:
+        """Restaura producto eliminado actualizando todos los campos pero manteniendo created_at original"""
+        # Actualizar todos los campos de datos
+        existing_product.name = new_data["name"].strip().lower()
+        existing_product.size = new_data["size"].strip().lower()
+        existing_product.price = Decimal(new_data["price"])
+        existing_product.description = new_data["description"]
+        existing_product.is_active = new_data.get("is_active", True)
+
+        # Solo actualizar updated_at y limpiar deleted_at
+        existing_product.updated_at = datetime.now(timezone.utc)
+        existing_product.deleted_at = None
+        # created_at se mantiene igual (cuándo se creó originalmente)
+
+        db.session.commit()
+        return existing_product
+
+    @staticmethod
+    def create_fresh_product(product_data: dict) -> Product:
+        """Crea un producto completamente nuevo"""
+        price = Decimal(product_data["price"])
+
+        new_product = Product(
+            name=product_data["name"],
+            size=product_data["size"],
+            price=price,
+            description=product_data["description"],
+            is_active=product_data.get("is_active", True),
+        )
+
+        db.session.add(new_product)
+        db.session.commit()
+
+        return new_product

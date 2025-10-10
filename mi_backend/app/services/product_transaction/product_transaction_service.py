@@ -4,9 +4,10 @@ from ...services.inventory.inventory_service import InventoryService
 from ...services.branch.branch_service import BranchService
 from ...services.product.product_service import ProductService
 from ...services.supplier.supplier_service import SupplierService
+from ...services.log.log_service import LogService
 from ...services.staff.staff import get_user_by_id
 from ...database import db
-from ...validator.validator import validate_data
+from ...utils.validator import validate_data
 from ...utils.date_conversor import parse_transaction_date
 from decimal import Decimal
 
@@ -28,6 +29,12 @@ class ProductTransactionService:
         ).first()
 
         if product_transaction is None:
+            LogService.create_log(
+                {
+                    "module": f"{ProductTransactionService.__name__}.{ProductTransactionService.get_product_transaction_by_id.__name__}",
+                    "message": "No se encontró la transacción buscada por id",
+                }
+            )
             raise ValueError("Transacción no encontrada")
 
         return product_transaction.to_dict()
@@ -85,6 +92,12 @@ class ProductTransactionService:
 
         except Exception as e:
             db.session.rollback()
+            LogService.create_log(
+                {
+                    "module": f"{ProductTransactionService.__name__}.{ProductTransactionService.create_product_transaction_service.__name__}",
+                    "message": f"Ocurrió un error en la creación de la transacción del producto: {str(e)}. Se realizó rollback.",
+                }
+            )
             raise e
 
     @staticmethod
@@ -94,16 +107,36 @@ class ProductTransactionService:
 
         BranchService.get_branch_by_id(product_transaction["branch_id"])
 
-        get_user_by_id(product_transaction["app_user_id"]) # Validamos si el usuario de la transacción existe
+        get_user_by_id(
+            product_transaction["app_user_id"]
+        )  # Validamos si el usuario de la transacción existe
 
         if "supplier_id" in product_transaction and product_transaction["supplier_id"]:
             SupplierService.get_supplier_by_id(product_transaction["supplier_id"])
 
         if product_transaction["quantity"] < 0:
+            LogService.create_log(
+                {
+                    "module": f"{ProductTransactionService.__name__}.{ProductTransactionService.validate_product_transaction_data.__name__}",
+                    "message": "Se ingresó una cantidad negativa en la transacción",
+                }
+            )
             raise ValueError("La Cantidad no puede ser negativa")
 
         if len(product_transaction["description"].strip()) < 5:
+            LogService.create_log(
+                {
+                    "module": f"{ProductTransactionService.__name__}.{ProductTransactionService.validate_product_transaction_data.__name__}",
+                    "message": "Se ingresó una descripción menor a 5 caracterese en la transacción",
+                }
+            )
             raise ValueError("La descripción debe ser mayor a 5 caracteres")
 
         if product_transaction["unit_price"] < 0:
+            LogService.create_log(
+                {
+                    "module": f"{ProductTransactionService.__name__}.{ProductTransactionService.validate_product_transaction_data.__name__}",
+                    "message": "Se ingresó una precio unitario negativo en la transacción",
+                }
+            )
             raise ValueError(f"El precio unitario no puede ser negativo")

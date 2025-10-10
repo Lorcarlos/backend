@@ -1,6 +1,7 @@
 from ...database import db
 from datetime import datetime, timezone
 
+
 class Inventory(db.Model):
     __tablename__ = "inventory"
 

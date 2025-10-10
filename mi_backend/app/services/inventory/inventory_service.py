@@ -1,4 +1,5 @@
 from ...models.inventory.inventory import Inventory
+from ...services.log.log_service import LogService
 from ...database import db
 from sqlalchemy import func
 
@@ -13,6 +14,12 @@ class InventoryService:
         )
 
         if inventoryExists:
+            LogService.create_log(
+                {
+                    "module": f"{InventoryService.__name__}.{InventoryService._create_inventory.__name__}",
+                    "message": f"El inventario para el producto con ID {inventory['product_id']} en la sede con ID {inventory['branch_id']} ya existe.",
+                }
+            )
             raise ValueError(
                 f"El inventario para el producto con ID {inventory['product_id']} en la sede con ID {inventory['branch_id']} ya existe."
             )
@@ -101,6 +108,12 @@ class InventoryService:
             or transaction_type["name"] == "ajuste negativo"
         ):
             if quantity < product_transaction["quantity"]:
+                LogService.create_log(
+                    {
+                        "module": f"{InventoryService.__name__}.{InventoryService.adjust_quantity.__name__}",
+                        "message": "Se intentó sacar más material del disponible en el inventario",
+                    }
+                )
                 raise ValueError("No hay suficiente stock en el inventario")
             quantity -= product_transaction["quantity"]
 

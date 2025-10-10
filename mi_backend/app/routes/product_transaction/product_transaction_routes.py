@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from ...services.log.log_service import LogService
 from ...services.product_transaction.product_transaction_service import (
     ProductTransactionService,
 )
@@ -33,6 +34,12 @@ def get_product_transaction(id_product_transaction):
         return jsonify({"ok": False, "error": str(e)}), 400
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{get_product_transaction.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -54,5 +61,11 @@ def create_product_transaction():
         return jsonify({"ok": False, "error": str(e)}), 400
     
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{create_product_transaction.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
     

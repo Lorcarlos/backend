@@ -1,5 +1,5 @@
-from flask import Blueprint, jsonify, request
-from ...database import db
+from flask import Blueprint, jsonify
+from ...services.log.log_service import LogService
 from ...services.transaction_type.transaction_type_service import (
     TransactionTypeService,
 )
@@ -15,6 +15,12 @@ def get_transaction_types():
         transaction_types = TransactionTypeService.get_all_transaction_types()
         return jsonify({"ok": True, "transaction_types": transaction_types}), 200
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{get_transaction_types.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -39,4 +45,10 @@ def get_transaction_type(id_transaction_type):
         return jsonify({"ok": False, "error": str(e)}), 404
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{get_transaction_type.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
