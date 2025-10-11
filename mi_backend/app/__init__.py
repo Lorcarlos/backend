@@ -2,6 +2,7 @@
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from .database import init_db, db
+from .smtp_config import init_smtp  
 import os
 
 # Importar todos los modelos para que SQLAlchemy los reconozca
@@ -29,6 +30,7 @@ def create_app():
 
     init_db(app)
     JWTManager(app)
+    init_smtp(app)
 
     CORS(
         app,
