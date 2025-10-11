@@ -11,7 +11,7 @@ from ...services.staff.staff import (
 
 personal_bp = Blueprint("personal_bp", __name__)
 
-
+@personal_bp.route("/users", methods=["GET"])
 @personal_bp.route("/users/", methods=["GET"])
 def get_all_users():
     try:

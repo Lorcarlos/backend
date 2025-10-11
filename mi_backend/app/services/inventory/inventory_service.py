@@ -1,5 +1,4 @@
 from ...models.inventory.inventory import Inventory
-from ...services.log.log_service import LogService
 from ...database import db
 from sqlalchemy import func
 
@@ -14,12 +13,6 @@ class InventoryService:
         )
 
         if inventoryExists:
-            LogService.create_log(
-                {
-                    "module": f"{InventoryService.__name__}.{InventoryService._create_inventory.__name__}",
-                    "message": f"El inventario para el producto con ID {inventory['product_id']} en la sede con ID {inventory['branch_id']} ya existe.",
-                }
-            )
             raise ValueError(
                 f"El inventario para el producto con ID {inventory['product_id']} en la sede con ID {inventory['branch_id']} ya existe."
             )
@@ -61,44 +54,30 @@ class InventoryService:
 
     @staticmethod
     def update_inventory(product_transaction, transaction_type):
-        from app import db
-        from app.models.inventory import Inventory
+        # ... (código existente) ...
+        inventory = InventoryService.get_inventory_by_product_and_branch(
+            product_transaction["product_id"], product_transaction["branch_id"]
+        )
 
-        try:
-            product_id = product_transaction["product_id"]
-            branch_id = product_transaction["branch_id"]
-            quantity = product_transaction["quantity"]
-
-            # Buscar inventario existente
-            inventory = Inventory.query.filter_by(
-                product_id=product_id,
-                branch_id=branch_id
-            ).first()
-
-            # Si no existe, crearlo con cantidad 0
-            if inventory is None:
-                inventory = Inventory(
-                    product_id=product_id,
-                    branch_id=branch_id,
-                    quantity=0
+        if not inventory:
+            if (
+                transaction_type["direction"] == "IN"
+                or transaction_type["name"] == "ajuste positivo"
+            ):
+                inventory = InventoryService._create_inventory(
+                    {
+                        "product_id": product_transaction["product_id"],
+                        "branch_id": product_transaction["branch_id"],
+                    }
                 )
-                db.session.add(inventory)
-                db.session.flush()  # asegura que tenga ID antes del commit
+            else:
+                raise ValueError("No existe inventario para este producto en esta sede")
 
-            # Actualizar cantidad según tipo de transacción
-            if transaction_type.name.upper() == "ENTRADA":
-                inventory.quantity += quantity
-            elif transaction_type.name.upper() == "SALIDA":
-                inventory.quantity -= quantity
+        inventory.quantity = InventoryService.adjust_quantity(
+            transaction_type, product_transaction, inventory.quantity
+        )
 
-            db.session.commit()
-            return inventory
-
-        except Exception as e:
-            db.session.rollback()
-            raise e
-
-
+        db.session.add(inventory)
 
     @staticmethod
     def adjust_quantity(transaction_type, product_transaction, quantity):
@@ -108,12 +87,6 @@ class InventoryService:
             or transaction_type["name"] == "ajuste negativo"
         ):
             if quantity < product_transaction["quantity"]:
-                LogService.create_log(
-                    {
-                        "module": f"{InventoryService.__name__}.{InventoryService.adjust_quantity.__name__}",
-                        "message": "Se intentó sacar más material del disponible en el inventario",
-                    }
-                )
                 raise ValueError("No hay suficiente stock en el inventario")
             quantity -= product_transaction["quantity"]
 

@@ -6,6 +6,7 @@ from ...database import db
 from decimal import Decimal
 from datetime import datetime, timezone
 from sqlalchemy import and_
+from  ...models.inventory.inventory import Inventory
 
 
 class ProductService:
@@ -22,32 +23,13 @@ class ProductService:
             "size": str,
             "price": (int, float, str),
             "description": str,
-            "quantity": (int, float),
         }
 
         validate_data(product, required_fields)
 
         product["name"] = product["name"].strip().lower()
         product["size"] = product["size"].strip().lower()
-
-        if len(product["name"]) < 3:
-            LogService.create_log(
-                {
-                    "module": f"{ProductService.__name__}.{ProductService.create_product_service.__name__}",
-                    "message": "Se ingresó un nombre de producto de menos de 3 caracteres",
-                }
-            )
-            raise ValueError("El nombre del producto no puede ser menor a 3 caracteres")
-
-        product_exists = Product.query.filter(
-            Product.deleted_at.is_(None),
-            Product.name == product["name"],
-            Product.size == product["size"],
-        ).first()
-
-        if product_exists:
-            raise ValueError("El producto ingresado ya existe")
-
+        
         try:
             price = Decimal(str(product["price"]))
         except Exception:
@@ -59,8 +41,19 @@ class ProductService:
                 raise ValueError("La cantidad no puede ser negativa")
         except Exception:
             raise ValueError("La cantidad debe ser un número entero válido")
+        
+        # 3. VERIFICACIÓN DE EXISTENCIA
+        product_exists = Product.query.filter(
+            Product.deleted_at.is_(None),
+            Product.name == product["name"],
+            Product.size == product["size"],
+        ).first()
 
-        # ✅ Crear el producto
+        if product_exists:
+            raise ValueError("El producto ingresado ya existe")
+
+
+        # 4. CREAR PRODUCTO
         new_product = Product(
             name=product["name"],
             size=product["size"],
@@ -70,25 +63,25 @@ class ProductService:
         )
 
         db.session.add(new_product)
-        db.session.flush()  # 👈 asegura que tenga ID antes de usarlo
+        db.session.flush() # Obtiene el new_product.id
 
-        # ✅ Crear el inventario relacionado
-        inventory = Inventory.query.filter_by(product_id=new_product.id).first()
-
-        if inventory:
-            inventory.quantity += quantity
-        else:
-            inventory = Inventory(
-                product_id=new_product.id,
-                branch_id=product.get("branch_id", 1),  # puedes cambiar si manejas sucursales
-                quantity=quantity,
-            )
-            db.session.add(inventory)
+        # 5. CREAR O ACTUALIZAR INVENTARIO
+        # Asumiendo que branch_id siempre es 1 si el frontend no lo envía.
+        branch_id = product.get("branch_id", 1) 
+        
+        # No deberías necesitar buscar, ya que es un producto NUEVO.
+        # Solo creamos el nuevo registro de inventario.
+        
+        new_inventory = Inventory(
+            product_id=new_product.id,
+            branch_id=branch_id,
+            quantity=quantity, # <--- ¡Aquí se guarda la cantidad!
+        )
+        db.session.add(new_inventory)
 
         db.session.commit()
 
-        return new_product
-
+        return new_product # Devuelve el producto creado
     @staticmethod
     def delete_product_by_id(id_product):
         product_to_delete = ProductService.get_product_by_id(id_product)
