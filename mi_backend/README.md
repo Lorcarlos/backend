@@ -1,36 +1,43 @@
 ﻿# Sistema de Gestión de Inventario - Backend API
 
-Sistema de gestión de inventario empresarial desarrollado con Flask, SQLAlchemy y MySQL. Proporciona una API REST completa para la administración de productos, inventarios, transacciones y personal.
+Sistema de gestión de inventario empresarial desarrollado con Flask, SQLAlchemy y MariaDB. Proporciona una API REST completa para la administración de productos, inventarios, transacciones, personal y autenticación con OTP por correo electrónico.
 
 ## Características Principales
 
 ### Arquitectura
 - **Framework**: Flask 2.3.2
 - **ORM**: SQLAlchemy 3.0.5
-- **Base de Datos**: MySQL
-- **Autenticación**: JWT (JSON Web Tokens)
+- **Base de Datos**: MariaDB con SQLAlchemy
+- **Autenticación**: JWT (JSON Web Tokens) con OTP por correo
+- **Correo Electrónico**: Flask-Mail con SMTP de Gmail
 - **Validación**: Regex y validaciones personalizadas
 - **Patrón**: MVC (Model-View-Controller)
+- **CORS**: Configurado para integración con frontend
 
 ### Modelos de Base de Datos
-- **AppUser**: Gestión de usuarios del sistema
+- **AppUser**: Gestión de usuarios del sistema con roles y sucursales
 - **Company**: Gestión de empresas
 - **Branch**: Sucursales de las empresas
-- **Product**: Catálogo de productos
-- **Supplier**: Proveedores
+- **Product**: Catálogo de productos con precios y categorías
+- **Supplier**: Proveedores con información de contacto
 - **Inventory**: Control de inventario por sucursal
-- **TransactionType**: Tipos de transacciones
-- **ProductTransaction**: Transacciones de productos
+- **TransactionType**: Tipos de transacciones (entrada/salida)
+- **ProductTransaction**: Transacciones de productos con historial
+- **Token**: Tokens OTP para autenticación de dos factores
+- **UserLogins**: Registro de inicios de sesión
+- **Log**: Sistema de logging para auditoría
 
 ### Funcionalidades Implementadas
-- CRUD completo para todas las entidades
-- Soft delete implementado en todas las tablas
-- Validación robusta de datos con expresiones regulares
-- Autenticación y autorización con JWT
-- Estructura MVC con separación clara de responsabilidades
-- API REST con respuestas JSON estandarizadas
-- Manejo de errores consistente
-- CORS configurado para integración con frontend
+- **Autenticación de Dos Factores**: Login con OTP enviado por correo
+- **CRUD completo** para todas las entidades
+- **Soft delete** implementado en todas las tablas
+- **Validación robusta** de datos con expresiones regulares
+- **Sistema de roles** y permisos
+- **Envío de correos** SMTP con Flask-Mail
+- **Sistema de logging** para auditoría
+- **API REST** con respuestas JSON estandarizadas
+- **Manejo de errores** consistente
+- **CORS configurado** para integración con frontend
 
 ## Estructura del Proyecto
 
@@ -45,7 +52,10 @@ mi_backend/
 │   │   ├── inventory/
 │   │   ├── transaction_type/
 │   │   ├── product_transaction/
-│   │   └── staff/
+│   │   ├── staff/
+│   │   ├── token/
+│   │   ├── login_logs/
+│   │   └── log/
 │   ├── routes/              # Endpoints de la API
 │   │   ├── company/
 │   │   ├── branch/
@@ -55,7 +65,10 @@ mi_backend/
 │   │   ├── transaction_type/
 │   │   ├── product_transaction/
 │   │   ├── staff/
-│   │   └── login/
+│   │   ├── login/
+│   │   ├── login_logs/
+│   │   ├── log/
+│   │   └── rol/
 │   ├── services/            # Lógica de negocio
 │   │   ├── company/
 │   │   ├── branch/
@@ -64,15 +77,22 @@ mi_backend/
 │   │   ├── inventory/
 │   │   ├── transaction_type/
 │   │   ├── product_transaction/
-│   │   └── staff/
-│   ├── validator/           # Validaciones de datos
-│   ├── utils/              # Utilidades y helpers
-│   └── database.py         # Configuración de base de datos
-├── instance/               # Archivos de instancia
-├── tests/                  # Pruebas unitarias
-├── requirements.txt        # Dependencias del proyecto
-├── run.py                 # Punto de entrada de la aplicación
-└── README.md              # Documentación del proyecto
+│   │   ├── staff/
+│   │   ├── login/
+│   │   ├── token/
+│   │   ├── login_logs/
+│   │   └── log/
+│   ├── utils/               # Utilidades y helpers
+│   │   ├── mail_sender.py   # Envío de correos
+│   │   ├── tokenGenerator.py
+│   │   ├── tokenType.py
+│   │   └── validator.py
+│   ├── smtp_config.py       # Configuración SMTP
+│   ├── database.py          # Configuración de base de datos
+│   └── __init__.py          # Inicialización de la aplicación
+├── requirements.txt         # Dependencias del proyecto
+├── run.py                   # Punto de entrada de la aplicación
+└── README.md                # Documentación del proyecto
 ```
 
 ## Instalación y Configuración
@@ -81,6 +101,7 @@ mi_backend/
 - Python 3.8 o superior
 - MySQL 5.7 o superior
 - pip (gestor de paquetes de Python)
+- Cuenta de Gmail con verificación en 2 pasos habilitada
 
 ### 1. Clonar el Repositorio
 ```bash
@@ -105,18 +126,32 @@ pip install -r requirements.txt
 ### 4. Configurar Variables de Entorno
 Crear archivo `.env` en la raíz del proyecto:
 ```env
-DATABASE_URI=mysql://usuario:password@localhost:3306/nombre_base_datos
-JWT_SECRET_KEY=tu_clave_secreta_jwt
+FLASK_ENV=development
+JWT_SECRET="jwt_super_secreto"
+DATABASE_URI="mysql+pymysql://usuario:password@127.0.0.1/nombre_base_datos"
+
+# CONFIGURACIÓN SMTP
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USE_TLS=True
+MAIL_USE_SSL=False
+MAIL_USERNAME=tu_email@gmail.com
+MAIL_PASSWORD=contraseña_de_aplicación_de_16_caracteres
 ```
 
-### 5. Configurar Base de Datos
+### 5. Configurar Gmail para SMTP
+1. Habilitar **Verificación en 2 pasos** en tu cuenta de Google
+2. Generar una **Contraseña de aplicación** específica para esta aplicación
+3. Usar esa contraseña en `MAIL_PASSWORD` (no tu contraseña normal)
+
+### 6. Configurar Base de Datos
 1. Crear la base de datos en MySQL
 2. Ejecutar la aplicación para crear las tablas automáticamente:
 ```bash
 python run.py
 ```
 
-### 6. Ejecutar la Aplicación
+### 7. Ejecutar la Aplicación
 ```bash
 python run.py
 ```
@@ -126,7 +161,8 @@ La aplicación estará disponible en `http://localhost:5000`
 ## API Endpoints
 
 ### Autenticación
-- `POST /auth/login` - Iniciar sesión
+- `POST /auth/login` - Iniciar sesión (envía OTP por correo)
+- `POST /auth/verify-otp` - Verificar código OTP y obtener JWT
 
 ### Gestión de Usuarios
 - `GET /users` - Obtener todos los usuarios
@@ -170,8 +206,55 @@ La aplicación estará disponible en `http://localhost:5000`
 - `GET /product-transaction/<id_product_transaction>` - Obtener transacción por ID
 - `POST /product-transaction` - Crear nueva transacción
 
+### Sistema de Logging
+- `GET /logs` - Obtener todos los logs del sistema
+- `GET /logs/<id_log>` - Obtener log específico
+
+### Registros de Login
+- `GET /user_logins` - Obtener todos los registros de login
+
 ### Permisos
 - `GET /permissions` - Obtener permisos del sistema
+
+## Flujo de Autenticación
+
+### 1. Login Inicial
+```json
+POST /auth/login
+{
+  "username": "usuario",
+  "password": "contraseña"
+}
+```
+
+**Respuesta exitosa:**
+```json
+{
+  "ok": true,
+  "message": "Correo enviado exitosamente"
+}
+```
+
+### 2. Verificación OTP
+```json
+POST /auth/verify-otp
+{
+  "username": "usuario",
+  "token": "123456"
+}
+```
+
+**Respuesta exitosa:**
+```json
+{
+  "ok": true,
+  "access_token": "jwt_token_aqui",
+  "message": "Inicio de sesión exitoso",
+  "username": "usuario",
+  "role": 1,
+  "branch_id": 1
+}
+```
 
 ## Ejemplos de Uso
 
@@ -233,6 +316,11 @@ POST /product-transaction
 - **Nombres**: Mínimo 3 caracteres
 - **Direcciones**: Mínimo 5 caracteres
 
+### Sistema de Tokens OTP
+- **Expiración**: Tokens válidos por 10 minutos
+- **Unicidad**: Cada token es único en el sistema
+- **Uso único**: Los tokens se marcan como usados después de la verificación
+
 ## Respuestas de la API
 
 ### Formato Estándar de Respuesta
@@ -260,6 +348,32 @@ POST /product-transaction
 - `404` - Not Found (Recurso no encontrado)
 - `500` - Internal Server Error (Error del servidor)
 
+## Características Técnicas
+
+### Sistema de Correo Electrónico
+- **SMTP**: Configurado para Gmail
+- **TLS**: Habilitado para conexión segura
+- **Autenticación**: Contraseña de aplicación de Gmail
+- **Manejo de errores**: Logging detallado de errores SMTP
+
+### Sistema de Tokens
+- **Generación**: Tokens de 6 dígitos únicos
+- **Expiración**: 10 minutos desde la creación
+- **Tipos**: OTP_LOGIN, RESET_PASSWORD
+- **Validación**: Verificación de expiración y uso
+
+### Base de Datos
+- **Soft Delete**: Implementado en todas las entidades
+- **Timestamps**: created_at, updated_at, deleted_at
+- **Relaciones**: Foreign keys con integridad referencial
+- **Índices**: Optimización de consultas frecuentes
+
+### Seguridad
+- **JWT**: Tokens de acceso seguros
+- **Hash de contraseñas**: Usando werkzeug.security
+- **CORS**: Configurado para dominio específico
+- **Validación**: Sanitización de datos de entrada
+
 ## Desarrollo
 
 ### Estructura de Servicios
@@ -278,6 +392,24 @@ Cada entidad tiene su propio servicio que maneja:
 ### Soft Delete
 Todas las entidades implementan soft delete usando el campo `deleted_at`, permitiendo recuperar datos eliminados.
 
+### Sistema de Logging
+- Registro automático de errores
+- Trazabilidad de operaciones críticas
+- Información detallada para debugging
+
+## Dependencias Principales
+
+```
+Flask==2.3.2
+Flask-SQLAlchemy==3.0.5
+Flask-Mail==0.9.1
+Flask-JWT-Extended==4.5.3
+Flask-CORS==4.0.0
+PyMySQL==1.1.0
+python-dotenv==1.0.0
+bcrypt==4.0.1
+```
+
 ## Contribución
 
 1. Fork el proyecto
@@ -293,4 +425,3 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 ## Contacto
 
 Para preguntas o soporte, contactar al equipo de desarrollo.
-

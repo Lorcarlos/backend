@@ -17,7 +17,7 @@ class Token(db.Model):
         db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )
 
-    app_user = db.relationship("App_user", backref="tokens")
+    app_user = db.relationship("AppUser", backref="tokens")
 
     def to_dict(self):
 

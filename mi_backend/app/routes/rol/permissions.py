@@ -1,9 +1,9 @@
 from flask import Blueprint, jsonify
 from app.database import get_connection
 from ...services.log.log_service import LogService
-product_bp = Blueprint("product", __name__)
+permissions_bp = Blueprint("permissions", __name__)
 
-@product_bp.route("/permissions", methods=["GET"])
+@permissions_bp.route("/permissions", methods=["GET"])
 def get_permissions():
     try:
         conn = get_connection()

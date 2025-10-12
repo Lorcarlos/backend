@@ -7,6 +7,7 @@ inventory_bp = Blueprint("inventory", __name__, url_prefix="/inventories")
 
 CORS(inventory_bp)
 
+
 @inventory_bp.route("/", methods=["GET"])
 def get_inventories():
     try:
@@ -28,6 +29,7 @@ def get_inventories():
         )
         return jsonify({"ok": False, "error": str(e)}), 500
 
+
 @inventory_bp.route("/levels", methods=["GET"])
 def get_inventories_with_levels():
     try:
@@ -41,6 +43,12 @@ def get_inventories_with_levels():
         return jsonify({"ok": True, "inventories": inventories}), 200
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{get_inventories_with_levels.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -63,4 +71,10 @@ def get_inventory_by_id(id_inventory):
         return jsonify({"ok": False, "error": str(e)}), 404
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{get_inventory_by_id.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"ok": False, "error": str(e)}), 500
