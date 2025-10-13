@@ -21,7 +21,6 @@ def login(username, password):
     if not user:
         raise ValueError("Credenciales inválidas")
 
-
     if not check_password_hash(user.hashed_password, password):
         raise ValueError("Credenciales inválidas")
 
@@ -64,6 +63,7 @@ def verify_otp(username, token):
         "access_token": access_token,
         "message": "Inicio de sesión exitoso",
         "username": user.username,
+        "name": user.name,
         "role": user.role_id,
         "branch_id": user.branch_id,
     }

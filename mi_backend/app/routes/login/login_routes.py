@@ -46,6 +46,7 @@ def verify_otp_login():
                 "access_token": result["access_token"],
                 "message": "Inicio de sesión exitoso",
                 "username": result["username"],
+                "name": result["name"],
                 "role": result["role"],
                 "branch_id": result["branch_id"],
             },
