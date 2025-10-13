@@ -17,5 +17,7 @@ class UserLogins(db.Model):
         return {
             "id": self.id,
             "app_user_id": self.app_user_id,
+            "app_user_username ": self.app_user.username,
+            "app_user_email ": self.app_user.email,
             "created_at": self.created_at,
         }
