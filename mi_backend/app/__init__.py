@@ -1,4 +1,4 @@
-﻿from flask import Flask
+﻿from flask import Flask, request
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from .database import init_db, db
@@ -26,7 +26,6 @@ from .routes.product_transaction.product_transaction_routes import (
 
 def create_app():
     app = Flask(__name__)
-
     app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "super-secret-key")
 
     init_db(app)
@@ -39,7 +38,14 @@ def create_app():
         supports_credentials=True,
     )
 
-    # Registrar todos los blueprints
+    @app.before_request
+    def handle_options():
+        if request.method == "OPTIONS":
+            response = app.make_response('')
+            response.status_code = 200
+            return response
+
+    # Registrar blueprints
     app.register_blueprint(product_bp)
     app.register_blueprint(transaction_type_bp)
     app.register_blueprint(supplier_bp)
