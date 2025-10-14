@@ -107,3 +107,4 @@ def forgot_password():
             }
         )
         return jsonify({"error": str(e)}), 500
+

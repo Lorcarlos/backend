@@ -46,7 +46,7 @@ class ProductTransaction(db.Model):
             ),
             "transaction_date": self.transaction_date,
             "product": f"{self.product.name} {self.product.size}",
-            "supplier_name": self.supplier.name,
+            "supplier_name": self.supplier.name if self.supplier else None,
             "branch_name": self.branch.name,
             "transaction_type_name": self.transaction_type.name,
             "app_user_name": self.app_user.name,

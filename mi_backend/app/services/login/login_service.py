@@ -92,3 +92,7 @@ def forgot_password_service(data):
         user.email,
         f"Hola! aquí tienes tu código para reestablecer la contraseña de tu usuario: {token}. Si no solicitaste esto, por favor contacta con soporte inmediatamente.",
     )
+
+
+#def verify_reset_password_otp():
+    
