@@ -1,8 +1,10 @@
 import random
+from ..models.token.token import Token
 
 
-def uniqueTokenGenerator(existsTokens):
+def uniqueTokenGenerator():
     while True:
         token = str(random.randint(0, 999999)).zfill(6)
-        if token not in existsTokens:
+        exists = Token.query.filter(Token.token == token).first()
+        if not exists:
             return token

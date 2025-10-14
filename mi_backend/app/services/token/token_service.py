@@ -6,9 +6,11 @@ from datetime import datetime, timedelta, timezone
 
 class TokenService:
 
+    @staticmethod
     def getAllTokens():
         return Token.query.all()
 
+    @staticmethod
     def create(token):
 
         new_token = Token(
@@ -23,6 +25,7 @@ class TokenService:
 
         return new_token
 
+    @staticmethod
     def findValidToken(app_user_id, token):
 
         token = Token.query.filter(

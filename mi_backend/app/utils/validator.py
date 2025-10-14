@@ -144,6 +144,20 @@ def validate_phone_number(phone_number: int):
     return True
 
 
+def validate_email(email: str):
+
+    if not re.match(regex_email, email):
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{validate_email.__name__}",
+                "message": f"Se ingresó un email inválido: {email}",
+            }
+        )
+        raise ValueError(f"El email no es válido.")
+
+    return True
+
+
 def validate_document_id(document_id: int):
     doc_str = str(document_id)
 

@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from ...services.log.log_service import LogService
-from ...services.login.login_service import login, verify_otp, forgot_password
+from ...services.login.login_service import login, verify_otp, forgot_password_service
 from flask import jsonify
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -78,7 +78,7 @@ def forgot_password():
     try:
         data = request.get_json()
 
-        forgot_password(data.get("email"))
+        forgot_password_service(data)
         return (
             jsonify(
                 {"message": "Si existe el usuario, se enviará el token a tu correo"}
@@ -87,7 +87,7 @@ def forgot_password():
         )
 
     except ValueError as e:
-        if e.message == "No se encontró el usuario buscado por email":
+        if str(e) == "Usuario no encontrado":
             return (
                 jsonify(
                     {"message": "Si existe el usuario, se enviará el token a tu correo"}
@@ -95,9 +95,7 @@ def forgot_password():
                 200,
             )
         return (
-            jsonify(
-                {"error": str(e)}
-            ),
+            jsonify({"error": str(e)}),
             404,
         )
 

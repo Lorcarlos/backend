@@ -6,6 +6,7 @@ from ...services.staff.staff import get_user_by_email
 from ...utils.mail_sender import send_otp_mail
 from ...utils.tokenType import TokenType
 from ...utils.tokenGenerator import uniqueTokenGenerator
+from ...utils.validator import validate_data, validate_email
 from werkzeug.security import check_password_hash
 from flask_jwt_extended import create_access_token
 from flask import jsonify
@@ -25,9 +26,7 @@ def login(username, password):
     if not check_password_hash(user.hashed_password, password):
         raise ValueError("Credenciales inválidas")
 
-    tokenSet = {t.token for t in TokenService.getAllTokens()}
-
-    token = uniqueTokenGenerator(tokenSet)
+    token = uniqueTokenGenerator()
 
     TokenService.create(
         {"app_user_id": user.id, "token": token, "type": TokenType.OTP_LOGIN.value}
@@ -70,13 +69,19 @@ def verify_otp(username, token):
     }
 
 
-def forgot_password(email):
+def forgot_password_service(data):
+
+    required_fields = {"email": str}
+
+    validate_data(data, required_fields)
+    
+    email = data.get("email")
+    
+    validate_email(email)
 
     user = get_user_by_email(email)
 
-    tokenSet = {t.token for t in TokenService.getAllTokens()}
-
-    token = uniqueTokenGenerator(tokenSet)
+    token = uniqueTokenGenerator()
 
     TokenService.create(
         {"token": token, "app_user_id": user.id, "type": TokenType.RESET_PASSWORD.value}

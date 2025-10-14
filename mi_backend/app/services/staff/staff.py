@@ -70,7 +70,7 @@ def get_user_by_id(user_id):
 @staticmethod
 def get_user_by_email(email):
 
-    user = AppUser.query.filter(AppUser.email == email, AppUser.deleted_at.is_(None))
+    user = AppUser.query.filter(AppUser.email == email, AppUser.deleted_at.is_(None)).first()
 
     if user is None:
         LogService.create_log(
