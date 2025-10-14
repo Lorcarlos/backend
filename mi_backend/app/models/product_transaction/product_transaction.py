@@ -45,10 +45,10 @@ class ProductTransaction(db.Model):
                 float(self.total_price) if self.total_price is not None else None
             ),
             "transaction_date": self.transaction_date,
-            "product_id": self.product_id,
-            "supplier_id": self.supplier_id,
-            "branch_id": self.branch_id,
-            "transaction_type_id": self.transaction_type_id,
-            "app_user_id": self.app_user_id,
+            "product": f"{self.product.name} {self.product.size}",
+            "supplier_name": self.supplier.name,
+            "branch_name": self.branch.name,
+            "transaction_type_name": self.transaction_type.name,
+            "app_user_name": self.app_user.name,
             "created_at": self.created_at,
         }

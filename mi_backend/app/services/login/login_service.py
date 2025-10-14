@@ -2,6 +2,7 @@ from ...database import db
 from ...models.staff.staff_peticion import AppUser
 from ...services.token.token_service import TokenService
 from ...services.login_logs.user_logins_service import UserLoginsService
+from ...services.staff.staff import get_user_by_email
 from ...utils.mail_sender import send_otp_mail
 from ...utils.tokenType import TokenType
 from ...utils.tokenGenerator import uniqueTokenGenerator
@@ -67,3 +68,22 @@ def verify_otp(username, token):
         "role": user.role_id,
         "branch_id": user.branch_id,
     }
+
+
+def forgot_password(email):
+
+    user = get_user_by_email(email)
+
+    tokenSet = {t.token for t in TokenService.getAllTokens()}
+
+    token = uniqueTokenGenerator(tokenSet)
+
+    TokenService.create(
+        {"token": token, "app_user_id": user.id, "type": TokenType.RESET_PASSWORD.value}
+    )
+
+    send_otp_mail(
+        f"Código para reestablecer contraseña {token}",
+        user.email,
+        f"Hola! aquí tienes tu código para reestablecer la contraseña de tu usuario: {token}. Si no solicitaste esto, por favor contacta con soporte inmediatamente.",
+    )

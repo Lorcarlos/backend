@@ -5,7 +5,7 @@ from ...services.product_transaction.product_transaction_service import (
 )
 
 product_transaction_bp = Blueprint(
-    "product_transaction", __name__, url_prefix="/product-transaction"
+    "product_transaction", __name__, url_prefix="/product-transactions"
 )
 
 

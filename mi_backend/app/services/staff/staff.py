@@ -68,6 +68,23 @@ def get_user_by_id(user_id):
 
 
 @staticmethod
+def get_user_by_email(email):
+
+    user = AppUser.query.filter(AppUser.email == email, AppUser.deleted_at.is_(None))
+
+    if user is None:
+        LogService.create_log(
+            {
+                "module": f"{get_user_by_email.__name__}",
+                "message": "No se encontró el usuario buscado por email",
+            }
+        )
+        raise ValueError("Usuario no encontrado")
+
+    return user
+
+
+@staticmethod
 def soft_delete_user_if_requested(document_id):
     user = AppUser.query.filter_by(document_id=document_id).first()
     if not user:

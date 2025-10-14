@@ -1,5 +1,6 @@
 from flask import Blueprint, request
-from ...services.login.login_service import login, verify_otp
+from ...services.log.log_service import LogService
+from ...services.login.login_service import login, verify_otp, forgot_password
 from flask import jsonify
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -28,6 +29,12 @@ def login_route():
         return jsonify({"error": str(e)}), 404
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{login_route.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"error": str(e)}), 500
 
 
@@ -56,4 +63,49 @@ def verify_otp_login():
         return jsonify({"error": str(e)}), 404
 
     except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{verify_otp_login.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
+        return jsonify({"error": str(e)}), 500
+
+
+@auth_bp.route("/forgot-password", methods=["POST"])
+def forgot_password():
+
+    try:
+        data = request.get_json()
+
+        forgot_password(data.get("email"))
+        return (
+            jsonify(
+                {"message": "Si existe el usuario, se enviará el token a tu correo"}
+            ),
+            200,
+        )
+
+    except ValueError as e:
+        if e.message == "No se encontró el usuario buscado por email":
+            return (
+                jsonify(
+                    {"message": "Si existe el usuario, se enviará el token a tu correo"}
+                ),
+                200,
+            )
+        return (
+            jsonify(
+                {"error": str(e)}
+            ),
+            404,
+        )
+
+    except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{forgot_password.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
         return jsonify({"error": str(e)}), 500
