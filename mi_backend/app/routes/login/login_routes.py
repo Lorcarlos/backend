@@ -1,6 +1,12 @@
 from flask import Blueprint, request
 from ...services.log.log_service import LogService
-from ...services.login.login_service import login, verify_otp, forgot_password_service
+from ...services.login.login_service import (
+    login,
+    verify_otp,
+    forgot_password_service,
+    verify_reset_password_otp_service,
+    reset_password_service,
+)
 from flask import jsonify
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -10,10 +16,8 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 def login_route():
     try:
         data = request.get_json()
-        username = data.get("username")
-        password = data.get("password")
 
-        login(username, password)
+        login(data)
 
         return (
             jsonify(
@@ -45,22 +49,24 @@ def verify_otp_login():
 
         data = request.get_json()
 
-        result = verify_otp(data["username"], data["token"])
+        result = verify_otp(data)
 
-        return jsonify(
-            {
-                "ok": True,
-                "access_token": result["access_token"],
-                "message": "Inicio de sesión exitoso",
-                "username": result["username"],
-                "name": result["name"],
-                "role": result["role"],
-                "branch_id": result["branch_id"],
-            },
+        return (
+            jsonify(
+                {
+                    "ok": True,
+                    "access_token": result["access_token"],
+                    "message": "Inicio de sesión exitoso",
+                    "username": result["username"],
+                    "name": result["name"],
+                    "role": result["role"],
+                    "branch_id": result["branch_id"],
+                },
+            ),
             200,
         )
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        return jsonify({"error": str(e)}), 400
 
     except Exception as e:
         LogService.create_log(
@@ -79,6 +85,7 @@ def forgot_password():
         data = request.get_json()
 
         forgot_password_service(data)
+
         return (
             jsonify(
                 {"message": "Si existe el usuario, se enviará el token a tu correo"}
@@ -87,7 +94,7 @@ def forgot_password():
         )
 
     except ValueError as e:
-        if str(e) == "Usuario no encontrado":
+        if str(e) == "El email ingresado no existe":
             return (
                 jsonify(
                     {"message": "Si existe el usuario, se enviará el token a tu correo"}
@@ -108,3 +115,49 @@ def forgot_password():
         )
         return jsonify({"error": str(e)}), 500
 
+
+@auth_bp.route("/verify-otp-password", methods=["POST"])
+def verify_otp_reset_password():
+    try:
+
+        data = request.get_json()
+
+        result = verify_reset_password_otp_service(data)
+
+        return jsonify({"ok": True, "message": result}), 200
+
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{verify_otp_reset_password.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
+        return jsonify({"error": str(e)}), 500
+
+
+@auth_bp.route("/reset-password", methods=["POST"])
+def reset_password():
+
+    try:
+
+        data = request.get_json()
+
+        result = reset_password_service(data)
+
+        return jsonify({"ok": True, "message": result}), 200
+
+    except ValueError as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
+
+    except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{reset_password.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
+        return jsonify({"error": str(e)}), 500

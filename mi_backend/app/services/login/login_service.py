@@ -1,21 +1,26 @@
 from ...database import db
 from ...models.staff.staff_peticion import AppUser
 from ...services.token.token_service import TokenService
+from ...services.log.log_service import LogService
 from ...services.login_logs.user_logins_service import UserLoginsService
 from ...services.staff.staff import get_user_by_email
 from ...utils.mail_sender import send_otp_mail
 from ...utils.tokenType import TokenType
 from ...utils.tokenGenerator import uniqueTokenGenerator
-from ...utils.validator import validate_data, validate_email
+from ...utils.validator import validate_data, validate_email, hash_password
 from werkzeug.security import check_password_hash
 from flask_jwt_extended import create_access_token
 from flask import jsonify
 
 
-def login(username, password):
+def login(data):
+
+    required_fields = {"username": str, "password": str}
+
+    validate_data(data, required_fields)
 
     user = (
-        AppUser.query.filter_by(username=username)
+        AppUser.query.filter_by(username=data.get("username"))
         .filter(AppUser.deleted_at.is_(None))
         .first()
     )
@@ -23,7 +28,7 @@ def login(username, password):
     if not user:
         raise ValueError("Credenciales inválidas")
 
-    if not check_password_hash(user.hashed_password, password):
+    if not check_password_hash(user.hashed_password, data.get("password")):
         raise ValueError("Credenciales inválidas")
 
     token = uniqueTokenGenerator()
@@ -39,15 +44,37 @@ def login(username, password):
     )
 
 
-def verify_otp(username, token):
+def verify_otp(data):
+
+    required_fields = {"username": str, "token": str}
+
+    validate_data(data, required_fields)
 
     user = (
-        AppUser.query.filter_by(username=username)
+        AppUser.query.filter_by(username=data["username"])
         .filter(AppUser.deleted_at.is_(None))
         .first()
     )
 
-    tokenFound = TokenService.findValidToken(user.id, token)
+    if user is None:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{verify_otp.__name__}",
+                "message": "Se ingresó un usuario inválido en el inicio de sesión con otp",
+            }
+        )
+        raise ValueError("El usuario ingresado no existe")
+
+    tokenFound = TokenService.findValidToken(user.id, data["token"])
+
+    if tokenFound is None:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{verify_otp.__name__}",
+                "message": "Se ingresó un token inválido en el inicio de sesión con otp",
+            }
+        )
+        raise ValueError("El token ingresado no existe")
 
     tokenFound.is_used = True
     db.session.commit()
@@ -56,7 +83,6 @@ def verify_otp(username, token):
         identity={"username": user.username, "role": user.role_id}
     )
 
-    # CREAR ENTIDAD LOGIN EN LA BD Y CREAR LOG DE INICIO DE SESIÓN
     UserLoginsService.create(user.id)
 
     return {
@@ -74,12 +100,21 @@ def forgot_password_service(data):
     required_fields = {"email": str}
 
     validate_data(data, required_fields)
-    
+
     email = data.get("email")
-    
+
     validate_email(email)
 
     user = get_user_by_email(email)
+
+    if user is None:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{forgot_password_service.__name__}",
+                "message": "Se ingresó un email inválido en la petición de token para reseteo de contraseña",
+            }
+        )
+        raise ValueError("El email ingresado no existe")
 
     token = uniqueTokenGenerator()
 
@@ -94,5 +129,76 @@ def forgot_password_service(data):
     )
 
 
-#def verify_reset_password_otp():
-    
+def verify_reset_password_otp_service(data):
+
+    required_fields = {"email": str, "token": str}
+
+    validate_data(data, required_fields)
+
+    user = get_user_by_email(data["email"])
+
+    if user is None:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{verify_reset_password_otp_service.__name__}",
+                "message": "Se ingresó un email inválido en el reseteo de contraseña con otp",
+            }
+        )
+        raise ValueError("El email ingresado no existe")
+
+    tokenFound = TokenService.findValidToken(user.id, data["token"])
+
+    if tokenFound is None:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{verify_reset_password_otp_service.__name__}",
+                "message": "Se ingresó un token inválido en el reseteo de contraseña con otp",
+            }
+        )
+        raise ValueError("El token ingresado no existe")
+
+    tokenFound.is_used = True
+    db.session.commit()
+
+    return "Se ingresó el token correctamente"
+
+
+def reset_password_service(data):
+
+    required_fields = {
+        "email": str,
+        "new_password": str,
+        "confirm_password": str,
+    }
+
+    validate_data(data, required_fields)
+
+    new_password = data["new_password"]
+
+    if new_password != data["confirm_password"]:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{reset_password_service.__name__}",
+                "message": "La nueva contraseña y el repetir contraseña no coinciden",
+            }
+        )
+        raise ValueError("Las contraseñas ingresadas no coinciden")
+
+    user = get_user_by_email(data["email"])
+
+    if user is None:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{reset_password_service.__name__}",
+                "message": "Se ingresó un email inválido en el reseteo de contraseña",
+            }
+        )
+        raise ValueError("El email ingresado no existe")
+
+    new_hashed_password = hash_password(new_password)
+
+    user.hashed_password = new_hashed_password
+
+    db.session.commit()
+
+    return "Contraseña restaurada exitosamente"
