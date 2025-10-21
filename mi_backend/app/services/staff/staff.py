@@ -68,6 +68,30 @@ def get_user_by_id(user_id):
 
 
 @staticmethod
+def serialize_user(user: AppUser) -> dict:
+    """Serializa un objeto AppUser a un diccionario con el formato esperado por el frontend"""
+    # Mapeo de role_id a nombre de rol
+    role_map = {
+        1: "Administrador",
+        2: "Usuario",
+        3: "Gerente",
+    }
+
+    return {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "username": user.username,
+        "document_id": str(user.document_id),
+        "phone_number": str(user.phone_number),
+        "role": role_map.get(user.role_id, "Usuario"),
+        "cargo": role_map.get(user.role_id, "Usuario"),  # cargo es lo mismo que role
+        "branch_id": user.branch_id,
+        "deleted_at": user.deleted_at.isoformat() if user.deleted_at else None,
+    }
+
+
+@staticmethod
 def get_user_by_email(email):
 
     user = AppUser.query.filter(AppUser.email == email, AppUser.deleted_at.is_(None)).first()
@@ -99,6 +123,10 @@ def soft_delete_user_if_requested(document_id):
 def update_user_service(document_id, data):
     if not data:
         return {"ok": False, "error": "No se proporcionaron datos", "status": 400}
+
+    # Manejar new_password si viene del frontend
+    if "new_password" in data:
+        data["hashed_password"] = data.pop("new_password")
 
     allowed_fields = {
         "name": str,
@@ -178,10 +206,13 @@ def update_user_service(document_id, data):
     user.updated_at = datetime.utcnow()
     db.session.commit()
 
+    # Serializar el usuario actualizado para devolverlo
+    user_data = serialize_user(user)
+
     return {
         "ok": True,
         "message": "Usuario actualizado correctamente",
-        "document_id": document_id,
+        "user": user_data,
         "status": 200,
     }
 

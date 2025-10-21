@@ -79,8 +79,15 @@ def verify_otp(data):
     tokenFound.is_used = True
     db.session.commit()
 
+    # El identity debe ser una cadena (user_id), los datos adicionales van en additional_claims
     access_token = create_access_token(
-        identity={"username": user.username, "role": user.role_id}
+        identity=str(user.id),
+        additional_claims={
+            "username": user.username,
+            "role": user.role_id,
+            "user_id": user.id,
+            "is_active": user.is_active
+        }
     )
 
     UserLoginsService.create(user.id)
@@ -92,6 +99,7 @@ def verify_otp(data):
         "name": user.name,
         "role": user.role_id,
         "branch_id": user.branch_id,
+        "user_id": user.id,
     }
 
 

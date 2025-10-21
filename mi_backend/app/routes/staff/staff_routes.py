@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import verify_jwt_in_request, get_jwt
 from ...services.log.log_service import LogService
 from ...models.staff.staff_peticion import AppUser
 from ...services.staff.staff import (
@@ -6,6 +7,7 @@ from ...services.staff.staff import (
     create_new_user,
     soft_delete_user_if_requested,
     update_user_service,
+    serialize_user,
 )
 
 
@@ -41,6 +43,39 @@ def get_all_users():
         LogService.create_log(
             {
                 "module": f"{__name__}.{get_all_users.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@personal_bp.route("/user/me", methods=["GET"])
+def get_current_user():
+    try:
+        # Verificar y obtener el JWT
+        verify_jwt_in_request()
+        claims = get_jwt()
+
+        # Obtener el user_id del JWT
+        user_id = claims.get("user_id")
+
+        if not user_id:
+            return jsonify({"ok": False, "error": "No se pudo identificar al usuario"}), 401
+
+        # Obtener el usuario
+        user = get_user_by_id(user_id)
+
+        # Serializar el usuario
+        user_data = serialize_user(user)
+
+        return jsonify({"ok": True, "user": user_data}), 200
+
+    except ValueError as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
+    except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{get_current_user.__name__}",
                 "message": f"Exception error {str(e)}",
             }
         )
@@ -143,7 +178,8 @@ def update_user(document_id):
     try:
         data = request.get_json() or {}
         result = update_user_service(document_id, data)
-        return jsonify(result), result.get("status", 200)
+        status_code = result.pop("status", 200)
+        return jsonify(result), status_code
     except Exception as e:
         LogService.create_log(
             {
