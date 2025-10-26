@@ -2,8 +2,9 @@
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from .database import init_db, db
-from .smtp_config import init_smtp  
+from .smtp_config import init_smtp
 import os
+from datetime import timedelta
 
 # Importar todos los modelos para que SQLAlchemy los reconozca
 from .models import *
@@ -27,6 +28,7 @@ from .routes.product_transaction.product_transaction_routes import (
 def create_app():
     app = Flask(__name__)
     app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "super-secret-key")
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
 
     init_db(app)
     JWTManager(app)

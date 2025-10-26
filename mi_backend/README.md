@@ -1,28 +1,32 @@
-﻿# Sistema de Gestión de Inventario - Backend API
+# ImproExpress - Sistema de Gestión de Inventario - Backend API
 
-Sistema de gestión de inventario empresarial desarrollado con Flask, SQLAlchemy y MariaDB. Proporciona una API REST completa para la administración de productos, inventarios, transacciones, personal y autenticación con OTP por correo electrónico.
+Sistema de gestión de inventario empresarial desarrollado con Flask, SQLAlchemy y MySQL. Proporciona una API REST completa para la administración de productos, inventarios, transacciones, personal y autenticación con OTP por correo electrónico.
 
 ## Características Principales
 
-### Arquitectura
+### Arquitectura del Backend
+- **Patrón Arquitectónico**: Service Layer Architecture (Arquitectura en 3 capas)
+  - **Routes (Controllers)**: Manejo de peticiones HTTP y respuestas
+  - **Services**: Lógica de negocio, validaciones y procesamiento
+  - **Models**: Modelos de datos con SQLAlchemy ORM
+- **Tipo de API**: REST API (retorna JSON, no HTML)
 - **Framework**: Flask 2.3.2
 - **ORM**: SQLAlchemy 3.0.5
-- **Base de Datos**: MariaDB con SQLAlchemy
+- **Base de Datos**: MySQL con PyMySQL
 - **Autenticación**: JWT (JSON Web Tokens) con OTP por correo
 - **Correo Electrónico**: Flask-Mail con SMTP de Gmail
-- **Validación**: Regex y validaciones personalizadas
-- **Patrón**: MVC (Model-View-Controller)
-- **CORS**: Configurado para integración con frontend
+- **Validación**: Regex y validaciones personalizadas en capa de servicios
+- **CORS**: Configurado para integración con frontend React
 
 ### Modelos de Base de Datos
 - **AppUser**: Gestión de usuarios del sistema con roles y sucursales
 - **Company**: Gestión de empresas
 - **Branch**: Sucursales de las empresas
-- **Product**: Catálogo de productos con precios y categorías
+- **Product**: Catálogo de productos con precios y descripciones
 - **Supplier**: Proveedores con información de contacto
-- **Inventory**: Control de inventario por sucursal
+- **Inventory**: Control de inventario por sucursal y producto
 - **TransactionType**: Tipos de transacciones (entrada/salida)
-- **ProductTransaction**: Transacciones de productos con historial
+- **ProductTransaction**: Transacciones de productos con historial completo
 - **Token**: Tokens OTP para autenticación de dos factores
 - **UserLogins**: Registro de inicios de sesión
 - **Log**: Sistema de logging para auditoría
@@ -36,8 +40,11 @@ Sistema de gestión de inventario empresarial desarrollado con Flask, SQLAlchemy
 - **Envío de correos** SMTP con Flask-Mail
 - **Sistema de logging** para auditoría
 - **API REST** con respuestas JSON estandarizadas
+- **Generación de reportes Excel** con openpyxl
 - **Manejo de errores** consistente
 - **CORS configurado** para integración con frontend
+- **Gestión de inventario** con actualizaciones automáticas
+- **JWT con expiración de 1 hora**
 
 ## Estructura del Proyecto
 
@@ -67,8 +74,7 @@ mi_backend/
 │   │   ├── staff/
 │   │   ├── login/
 │   │   ├── login_logs/
-│   │   ├── log/
-│   │   └── rol/
+│   │   └── log/
 │   ├── services/            # Lógica de negocio
 │   │   ├── company/
 │   │   ├── branch/
@@ -83,22 +89,29 @@ mi_backend/
 │   │   ├── login_logs/
 │   │   └── log/
 │   ├── utils/               # Utilidades y helpers
-│   │   ├── mail_sender.py   # Envío de correos
+│   │   ├── mail_sender.py
 │   │   ├── tokenGenerator.py
 │   │   ├── tokenType.py
-│   │   └── validator.py
+│   │   ├── validator.py
+│   │   └── date_conversor.py
 │   ├── smtp_config.py       # Configuración SMTP
 │   ├── database.py          # Configuración de base de datos
 │   └── __init__.py          # Inicialización de la aplicación
+├── instance/                # Instancia de base de datos
+├── tests/                   # Tests del proyecto
+├── utils/                   # Utilidades adicionales
+├── venv/                    # Entorno virtual
 ├── requirements.txt         # Dependencias del proyecto
 ├── run.py                   # Punto de entrada de la aplicación
-└── README.md                # Documentación del proyecto
+├── .env                     # Variables de entorno
+├── .gitignore              # Archivos ignorados por Git
+└── README.md               # Documentación del proyecto
 ```
 
 ## Instalación y Configuración
 
 ### Prerrequisitos
-- Python 3.8 o superior
+- Python 3.11.9
 - MySQL 5.7 o superior
 - pip (gestor de paquetes de Python)
 - Cuenta de Gmail con verificación en 2 pasos habilitada
@@ -106,7 +119,7 @@ mi_backend/
 ### 1. Clonar el Repositorio
 ```bash
 git clone <url-del-repositorio>
-cd mi_backend
+cd improexpress_app/backend/mi_backend
 ```
 
 ### 2. Crear Entorno Virtual
@@ -128,7 +141,7 @@ Crear archivo `.env` en la raíz del proyecto:
 ```env
 FLASK_ENV=development
 JWT_SECRET="jwt_super_secreto"
-DATABASE_URI="mysql+pymysql://usuario:password@127.0.0.1/nombre_base_datos"
+DATABASE_URI="mysql+pymysql://impro_user:Pa55w.rd@127.0.0.1/improexpress_database"
 
 # CONFIGURACIÓN SMTP
 MAIL_SERVER=smtp.gmail.com
@@ -145,7 +158,14 @@ MAIL_PASSWORD=contraseña_de_aplicación_de_16_caracteres
 3. Usar esa contraseña en `MAIL_PASSWORD` (no tu contraseña normal)
 
 ### 6. Configurar Base de Datos
-1. Crear la base de datos en MySQL
+1. Crear la base de datos en MySQL:
+```sql
+CREATE DATABASE improexpress_database;
+CREATE USER 'impro_user'@'localhost' IDENTIFIED BY 'Pa55w.rd';
+GRANT ALL PRIVILEGES ON improexpress_database.* TO 'impro_user'@'localhost';
+FLUSH PRIVILEGES;
+```
+
 2. Ejecutar la aplicación para crear las tablas automáticamente:
 ```bash
 python run.py
@@ -163,9 +183,13 @@ La aplicación estará disponible en `http://localhost:5000`
 ### Autenticación
 - `POST /auth/login` - Iniciar sesión (envía OTP por correo)
 - `POST /auth/verify-otp` - Verificar código OTP y obtener JWT
+- `POST /auth/forgot-password` - Solicitar token para resetear contraseña
+- `POST /auth/verify-reset-password-otp` - Verificar OTP de reseteo
+- `POST /auth/reset-password` - Resetear contraseña
 
 ### Gestión de Usuarios
 - `GET /users` - Obtener todos los usuarios
+- `GET /user/me` - Obtener usuario actual (requiere JWT)
 - `GET /users/<user_id>` - Obtener usuario por ID
 - `POST /user_registration` - Registrar nuevo usuario
 - `PUT /user/<document_id>` - Actualizar usuario
@@ -202,9 +226,10 @@ La aplicación estará disponible en `http://localhost:5000`
 - `GET /transaction_types/<id_transaction_type>` - Obtener tipo de transacción por ID
 
 ### Transacciones de Productos
-- `GET /product-transaction` - Obtener todas las transacciones
-- `GET /product-transaction/<id_product_transaction>` - Obtener transacción por ID
-- `POST /product-transaction` - Crear nueva transacción
+- `GET /product-transactions` - Obtener todas las transacciones
+- `GET /product-transactions/<id_product_transaction>` - Obtener transacción por ID
+- `POST /product-transactions` - Crear nueva transacción
+- `GET /product-transactions/report/excel` - Descargar reporte Excel de todas las transacciones
 
 ### Sistema de Logging
 - `GET /logs` - Obtener todos los logs del sistema
@@ -212,9 +237,6 @@ La aplicación estará disponible en `http://localhost:5000`
 
 ### Registros de Login
 - `GET /user_logins` - Obtener todos los registros de login
-
-### Permisos
-- `GET /permissions` - Obtener permisos del sistema
 
 ## Flujo de Autenticación
 
@@ -251,9 +273,17 @@ POST /auth/verify-otp
   "access_token": "jwt_token_aqui",
   "message": "Inicio de sesión exitoso",
   "username": "usuario",
+  "name": "Nombre Completo",
   "role": 1,
-  "branch_id": 1
+  "branch_id": 1,
+  "user_id": 1
 }
+```
+
+### 3. Uso del JWT
+Todas las peticiones protegidas requieren el JWT en el header:
+```
+Authorization: Bearer jwt_token_aqui
 ```
 
 ## Ejemplos de Uso
@@ -266,8 +296,8 @@ POST /user_registration
   "email": "maria.gonzalez@empresa.com",
   "username": "mgonzalez",
   "hashed_password": "password123",
-  "document_id": 1234567890,
-  "phone_number": 3001234567,
+  "document_id": "1234567890",
+  "phone_number": "3001234567",
   "role_id": 2,
   "branch_id": 1
 }
@@ -277,17 +307,16 @@ POST /user_registration
 ```json
 POST /products
 {
-  "name": "Laptop Dell Inspiron",
-  "description": "Laptop para oficina con 8GB RAM",
-  "category": "Electrónicos",
-  "unit_price": 2500000.00,
-  "stock_quantity": 10
+  "name": "Laptop Dell",
+  "size": "15 pulgadas",
+  "price": 2500000.00,
+  "description": "Laptop para oficina con 8GB RAM"
 }
 ```
 
 ### Crear Transacción de Producto
 ```json
-POST /product-transaction
+POST /product-transactions
 {
   "description": "Compra de laptops para oficina",
   "quantity": 5,
@@ -301,13 +330,20 @@ POST /product-transaction
 }
 ```
 
+### Descargar Reporte Excel
+```bash
+GET /product-transactions/report/excel
+Headers:
+  Authorization: Bearer jwt_token_aqui
+```
+
 ## Validaciones Implementadas
 
 ### Datos de Usuario
 - **Email**: Formato válido de email
 - **Teléfono**: Número colombiano válido (3XXXXXXXXX)
 - **Documento**: Entre 6 y 10 dígitos
-- **Unicidad**: Email y documento únicos en el sistema
+- **Unicidad**: Email, username y documento únicos en el sistema
 
 ### Datos de Proveedor
 - **NIT**: Exactamente 9 dígitos
@@ -316,10 +352,22 @@ POST /product-transaction
 - **Nombres**: Mínimo 3 caracteres
 - **Direcciones**: Mínimo 5 caracteres
 
+### Datos de Producto
+- **Nombre**: Mínimo 3 caracteres
+- **Precio**: Mayor o igual a 0
+- **Unicidad**: Nombre + tamaño únicos
+
+### Datos de Transacción
+- **Cantidad**: Mayor o igual a 0
+- **Precio unitario**: Mayor o igual a 0
+- **Descripción**: Mínimo 5 caracteres
+- **Fecha**: Formato válido (DD/MM/YYYY o YYYY-MM-DD)
+
 ### Sistema de Tokens OTP
 - **Expiración**: Tokens válidos por 10 minutos
 - **Unicidad**: Cada token es único en el sistema
 - **Uso único**: Los tokens se marcan como usados después de la verificación
+- **Tipos**: OTP_LOGIN, RESET_PASSWORD
 
 ## Respuestas de la API
 
@@ -345,16 +393,24 @@ POST /product-transaction
 - `200` - OK (Operación exitosa)
 - `201` - Created (Recurso creado)
 - `400` - Bad Request (Datos inválidos)
+- `401` - Unauthorized (No autenticado o token expirado)
 - `404` - Not Found (Recurso no encontrado)
 - `500` - Internal Server Error (Error del servidor)
 
 ## Características Técnicas
+
+### Sistema de JWT
+- **Expiración**: 1 hora desde el login
+- **Contenido**: user_id, username, role, is_active
+- **Verificación**: Automática en endpoints protegidos
+- **Secret Key**: Configurable mediante variable de entorno
 
 ### Sistema de Correo Electrónico
 - **SMTP**: Configurado para Gmail
 - **TLS**: Habilitado para conexión segura
 - **Autenticación**: Contraseña de aplicación de Gmail
 - **Manejo de errores**: Logging detallado de errores SMTP
+- **Plantillas**: Correos personalizados para OTP y reseteo de contraseña
 
 ### Sistema de Tokens
 - **Generación**: Tokens de 6 dígitos únicos
@@ -362,19 +418,83 @@ POST /product-transaction
 - **Tipos**: OTP_LOGIN, RESET_PASSWORD
 - **Validación**: Verificación de expiración y uso
 
+### Reportes Excel
+- **Librería**: openpyxl 3.1.5
+- **Formato**: Encabezados con estilo, columnas auto-ajustadas
+- **Contenido**: Todas las transacciones con información completa
+- **Descarga**: Automática mediante endpoint protegido
+
 ### Base de Datos
 - **Soft Delete**: Implementado en todas las entidades
 - **Timestamps**: created_at, updated_at, deleted_at
 - **Relaciones**: Foreign keys con integridad referencial
 - **Índices**: Optimización de consultas frecuentes
+- **Transacciones**: Rollback automático en errores
 
 ### Seguridad
-- **JWT**: Tokens de acceso seguros
-- **Hash de contraseñas**: Usando werkzeug.security
-- **CORS**: Configurado para dominio específico
+- **JWT**: Tokens de acceso seguros con expiración de 1 hora
+- **Hash de contraseñas**: Usando bcrypt
+- **CORS**: Configurado para dominio específico (localhost:5173)
 - **Validación**: Sanitización de datos de entrada
+- **Logging**: Registro de errores y operaciones críticas
+
+### Gestión de Inventario
+- **Actualización automática**: Al crear transacciones de productos
+- **Validación de stock**: Prevención de stock negativo
+- **Trazabilidad**: Historial completo de movimientos
+- **Por sucursal**: Control independiente por ubicación
 
 ## Desarrollo
+
+### Patrón Arquitectónico: Service Layer Architecture
+
+El backend implementa una arquitectura en 3 capas claramente separadas:
+
+#### Capa 1: Routes (Controllers)
+- **Responsabilidad**: Manejo de peticiones HTTP
+- **Ubicación**: `app/routes/`
+- **Función**:
+  - Recibir requests
+  - Validar formato HTTP
+  - Llamar a la capa de servicios
+  - Retornar respuestas JSON
+- **NO contiene**: Lógica de negocio
+
+#### Capa 2: Services (Business Logic)
+- **Responsabilidad**: Lógica de negocio
+- **Ubicación**: `app/services/`
+- **Función**:
+  - Validación de datos de negocio
+  - Procesamiento y cálculos
+  - Orquestación de operaciones
+  - Transacciones de base de datos
+  - Logging de operaciones
+- **Independiente de HTTP**: Puede ser reutilizada
+
+#### Capa 3: Models (Data Layer)
+- **Responsabilidad**: Representación de datos
+- **Ubicación**: `app/models/`
+- **Función**:
+  - Definir estructura de tablas (SQLAlchemy ORM)
+  - Relaciones entre entidades
+  - Métodos de serialización (to_dict)
+- **NO contiene**: Lógica de negocio
+
+### Flujo de una Petición
+
+```
+HTTP Request
+    ↓
+Routes (Controller)
+    ↓ delega
+Services (Business Logic)
+    ↓ usa
+Models (ORM)
+    ↓ consulta
+Database (MySQL)
+    ↓ retorna
+Models → Services → Routes → HTTP Response (JSON)
+```
 
 ### Estructura de Servicios
 Cada entidad tiene su propio servicio que maneja:
@@ -382,33 +502,63 @@ Cada entidad tiene su propio servicio que maneja:
 - Lógica de negocio
 - Interacción con la base de datos
 - Manejo de errores
+- Logging de operaciones
 
 ### Validaciones
 - Validaciones de tipo de datos
 - Validaciones de formato con regex
 - Validaciones de unicidad
 - Validaciones de negocio específicas
+- Validación de relaciones entre entidades
 
 ### Soft Delete
-Todas las entidades implementan soft delete usando el campo `deleted_at`, permitiendo recuperar datos eliminados.
+Todas las entidades implementan soft delete usando el campo `deleted_at`, permitiendo:
+- Recuperar datos eliminados
+- Mantener integridad referencial
+- Auditoría completa de cambios
+- Restauración de registros
 
 ### Sistema de Logging
 - Registro automático de errores
 - Trazabilidad de operaciones críticas
 - Información detallada para debugging
+- Módulo y función que generó el log
 
 ## Dependencias Principales
 
 ```
 Flask==2.3.2
 Flask-SQLAlchemy==3.0.5
-Flask-Mail==0.9.1
+python-dotenv==1.0.0
+PyMySQL==1.1.0
 Flask-JWT-Extended==4.5.3
 Flask-CORS==4.0.0
-PyMySQL==1.1.0
-python-dotenv==1.0.0
+Flask-Mail==0.9.1
 bcrypt==4.0.1
+openpyxl==3.1.5
 ```
+
+## Solución de Problemas
+
+### Error de conexión a MySQL
+- Verificar que MySQL esté corriendo
+- Verificar credenciales en `.env`
+- Verificar que la base de datos exista
+
+### Error de SMTP
+- Verificar configuración de Gmail
+- Verificar que la contraseña de aplicación sea correcta
+- Verificar que la verificación en 2 pasos esté habilitada
+
+### Error de JWT
+- Verificar que JWT_SECRET_KEY esté configurado
+- Verificar que el token no haya expirado (1 hora)
+- Verificar formato del header Authorization
+
+### Error en reportes Excel
+- Verificar que openpyxl esté instalado
+- Verificar permisos de escritura
+- Verificar que existan transacciones en la base de datos
 
 ## Contribución
 

@@ -10,6 +10,9 @@ from ...database import db
 from ...utils.validator import validate_data
 from ...utils.date_conversor import parse_transaction_date
 from decimal import Decimal
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+from io import BytesIO
 
 
 class ProductTransactionService:
@@ -140,3 +143,90 @@ class ProductTransactionService:
                 }
             )
             raise ValueError(f"El precio unitario no puede ser negativo")
+
+    @staticmethod
+    def generate_excel_report():
+        """
+        Genera un archivo Excel con todas las transacciones de productos
+        """
+        try:
+            # Obtener todas las transacciones
+            product_transactions = ProductTransaction.query.all()
+
+            # Crear el workbook y la hoja activa
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Transacciones de Productos"
+
+            # Definir estilos
+            header_font = Font(bold=True, color="FFFFFF", size=12)
+            header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+            header_alignment = Alignment(horizontal="center", vertical="center")
+
+            # Definir encabezados
+            headers = [
+                "ID",
+                "Descripción",
+                "Producto",
+                "Cantidad",
+                "Precio Unitario",
+                "Precio Total",
+                "Fecha de Transacción",
+                "Tipo de Transacción",
+                "Sucursal",
+                "Usuario",
+                "Proveedor",
+                "Fecha de Creación"
+            ]
+
+            # Escribir encabezados
+            for col_num, header in enumerate(headers, 1):
+                cell = ws.cell(row=1, column=col_num)
+                cell.value = header
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = header_alignment
+
+            # Escribir datos
+            for row_num, transaction in enumerate(product_transactions, 2):
+                ws.cell(row=row_num, column=1, value=transaction.id)
+                ws.cell(row=row_num, column=2, value=transaction.description)
+                ws.cell(row=row_num, column=3, value=transaction.product.name if transaction.product else "N/A")
+                ws.cell(row=row_num, column=4, value=transaction.quantity)
+                ws.cell(row=row_num, column=5, value=float(transaction.unit_price))
+                ws.cell(row=row_num, column=6, value=float(transaction.total_price))
+                ws.cell(row=row_num, column=7, value=transaction.transaction_date.strftime("%Y-%m-%d %H:%M:%S") if transaction.transaction_date else "N/A")
+                ws.cell(row=row_num, column=8, value=transaction.transaction_type.name if transaction.transaction_type else "N/A")
+                ws.cell(row=row_num, column=9, value=transaction.branch.name if transaction.branch else "N/A")
+                ws.cell(row=row_num, column=10, value=transaction.app_user.name if transaction.app_user else "N/A")
+                ws.cell(row=row_num, column=11, value=transaction.supplier.name if transaction.supplier else "N/A")
+                ws.cell(row=row_num, column=12, value=transaction.created_at.strftime("%Y-%m-%d %H:%M:%S") if transaction.created_at else "N/A")
+
+            # Ajustar el ancho de las columnas
+            for column in ws.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 50)
+                ws.column_dimensions[column_letter].width = adjusted_width
+
+            # Guardar en un BytesIO
+            excel_file = BytesIO()
+            wb.save(excel_file)
+            excel_file.seek(0)
+
+            return excel_file
+
+        except Exception as e:
+            LogService.create_log(
+                {
+                    "module": f"{ProductTransactionService.__name__}.{ProductTransactionService.generate_excel_report.__name__}",
+                    "message": f"Error al generar el reporte Excel: {str(e)}",
+                }
+            )
+            raise e

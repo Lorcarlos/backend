@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 from ...services.log.log_service import LogService
 from ...services.product_transaction.product_transaction_service import (
     ProductTransactionService,
@@ -54,12 +54,12 @@ def create_product_transaction():
                 product_transaction
             )
         )
-        
+
         return jsonify({"ok": True, "product_transaction": new_product_transaction.to_dict()}), 201
-    
+
     except ValueError as e:
         return jsonify({"ok": False, "error": str(e)}), 400
-    
+
     except Exception as e:
         LogService.create_log(
             {
@@ -68,4 +68,28 @@ def create_product_transaction():
             }
         )
         return jsonify({"ok": False, "error": str(e)}), 500
-    
+
+
+@product_transaction_bp.route("/report/excel", methods=["GET"])
+def download_excel_report():
+    """
+    Endpoint para descargar el reporte de todas las transacciones en formato Excel
+    """
+    try:
+        excel_file = ProductTransactionService.generate_excel_report()
+
+        return send_file(
+            excel_file,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name='reporte_transacciones_productos.xlsx'
+        )
+
+    except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{download_excel_report.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
+        return jsonify({"ok": False, "error": str(e)}), 500
