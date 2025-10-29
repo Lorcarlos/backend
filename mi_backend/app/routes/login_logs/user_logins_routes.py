@@ -4,7 +4,7 @@ from ...services.log.log_service import LogService
 
 user_logins_bp = Blueprint("user_logins_bp", __name__, url_prefix="/user-logins")
 
-@user_logins_bp.route("/", methods=["GET", "OPTIONS"])
+@user_logins_bp.route("", methods=["GET", "OPTIONS"])
 def get_all_user_logins():
     if request.method == "OPTIONS":
         return jsonify({"ok": True}), 200

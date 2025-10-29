@@ -9,7 +9,7 @@ transaction_type_bp = Blueprint(
 )
 
 
-@transaction_type_bp.route("/", methods=["GET"])
+@transaction_type_bp.route("", methods=["GET"])
 def get_transaction_types():
     try:
         transaction_types = TransactionTypeService.get_all_transaction_types()

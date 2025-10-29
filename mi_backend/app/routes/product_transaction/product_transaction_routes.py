@@ -9,7 +9,7 @@ product_transaction_bp = Blueprint(
 )
 
 
-@product_transaction_bp.route("/", methods=["GET"])
+@product_transaction_bp.route("", methods=["GET"])
 def get_product_trasanctions():
     try:
         product_transactions = ProductTransactionService.get_all_products_transactions()
@@ -43,7 +43,7 @@ def get_product_transaction(id_product_transaction):
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
-@product_transaction_bp.route("/", methods=["POST"])
+@product_transaction_bp.route("", methods=["POST"])
 def create_product_transaction():
 
     try:

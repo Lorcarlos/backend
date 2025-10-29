@@ -6,7 +6,7 @@ log_bp = Blueprint("log", __name__, url_prefix="/logs")
 
 # ✅ Aceptamos GET y OPTIONS (para CORS preflight)
 @log_bp.route("", methods=["GET", "OPTIONS"])
-@log_bp.route("/", methods=["GET", "OPTIONS"])
+@log_bp.route("", methods=["GET", "OPTIONS"])
 def get_logs():
     # 🟢 Si es una solicitud de preflight (OPTIONS), respondemos sin error
     if request.method == "OPTIONS":
