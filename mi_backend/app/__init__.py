@@ -36,8 +36,17 @@ def create_app():
 
     CORS(
         app,
-        resources={r"/*": {"origins": "http://localhost:5173"}},
-        supports_credentials=True,
+        resources={
+            r"/*": {
+                "origins": [
+                    "http://localhost:5173",
+                    "https://*.trycloudflare.com"
+                ],         
+                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                "allow_headers": ["Content-Type", "Authorization"],
+                "supports_credentials": True
+            }
+        }
     )
 
     @app.before_request
