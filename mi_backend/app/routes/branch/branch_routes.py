@@ -5,7 +5,7 @@ from ...services.log.log_service import LogService
 branch_bp = Blueprint("branch", __name__, url_prefix="/branches")
 
 
-@branch_bp.route("", methods=["GET"])
+@branch_bp.route("/", methods=["GET"])
 def get_branches():
 
     try:

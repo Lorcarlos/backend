@@ -8,7 +8,7 @@ supplier_bp = Blueprint("supplier", __name__, url_prefix="/suppliers")
 CORS(supplier_bp)
 
 
-@supplier_bp.route("", methods=["GET"])
+@supplier_bp.route("/", methods=["GET"])
 def get_suppliers():
 
     try:
@@ -53,7 +53,7 @@ def get_supplier(id_supplier):
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
-@supplier_bp.route("", methods=["POST"])
+@supplier_bp.route("/", methods=["POST"])
 def create_supplier():
 
     try:

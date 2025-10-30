@@ -8,7 +8,7 @@ inventory_bp = Blueprint("inventory", __name__, url_prefix="/inventories")
 CORS(inventory_bp)
 
 
-@inventory_bp.route("", methods=["GET"])
+@inventory_bp.route("/", methods=["GET"])
 def get_inventories():
     try:
         branch_id = request.args.get("branch_id", type=int)

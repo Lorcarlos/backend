@@ -5,7 +5,7 @@ from ...services.log.log_service import LogService
 product_bp = Blueprint("product", __name__, url_prefix="/products")
 
 
-@product_bp.route("", methods=["GET"])
+@product_bp.route("/", methods=["GET"])
 def get_products():
     try:
         products = ProductService.get_all_products()
@@ -21,7 +21,7 @@ def get_products():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
-@product_bp.route("", methods=["POST"])
+@product_bp.route("/", methods=["POST"])
 def create_product():
     try:
         product = request.json
