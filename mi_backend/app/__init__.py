@@ -40,7 +40,7 @@ def create_app():
             r"/*": {
                 "origins": [
                     "http://localhost:5173",
-                    "https://*.trycloudflare.com"
+                    "https://frontend-tesis-dusky.vercel.app"
                 ],         
                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
                 "allow_headers": ["Content-Type", "Authorization"],
