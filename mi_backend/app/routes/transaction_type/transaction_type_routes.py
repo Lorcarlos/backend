@@ -3,6 +3,7 @@ from ...services.log.log_service import LogService
 from ...services.transaction_type.transaction_type_service import (
     TransactionTypeService,
 )
+from utils.decorators import jwt_required_custom
 
 transaction_type_bp = Blueprint(
     "transaction_type", __name__, url_prefix="/transaction_types"
@@ -10,6 +11,7 @@ transaction_type_bp = Blueprint(
 
 
 @transaction_type_bp.route("/", methods=["GET"])
+@jwt_required_custom
 def get_transaction_types():
     try:
         transaction_types = TransactionTypeService.get_all_transaction_types()
@@ -25,6 +27,7 @@ def get_transaction_types():
 
 
 @transaction_type_bp.route("/<id_transaction_type>", methods=["GET"])
+@jwt_required_custom
 def get_transaction_type(id_transaction_type):
 
     try:

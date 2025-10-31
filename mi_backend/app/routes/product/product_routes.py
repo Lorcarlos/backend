@@ -1,11 +1,13 @@
 from flask import Blueprint, jsonify, request
 from ...services.product.product_service import ProductService
 from ...services.log.log_service import LogService
+from utils.decorators import jwt_required_custom, role_required
 
 product_bp = Blueprint("product", __name__, url_prefix="/products")
 
 
 @product_bp.route("/", methods=["GET"])
+@jwt_required_custom
 def get_products():
     try:
         products = ProductService.get_all_products()
@@ -22,6 +24,7 @@ def get_products():
 
 
 @product_bp.route("/", methods=["POST"])
+@role_required([1])
 def create_product():
     try:
         product = request.json
@@ -40,6 +43,7 @@ def create_product():
 
 
 @product_bp.route("/<id_product>", methods=["DELETE"])
+@role_required([1])
 def delete_product(id_product):
 
     try:
@@ -68,6 +72,7 @@ def delete_product(id_product):
 
 
 @product_bp.route("/<id_product>", methods=["GET"])
+@jwt_required_custom
 def get_product(id_product):
 
     try:
@@ -96,6 +101,7 @@ def get_product(id_product):
 
 
 @product_bp.route("/<id_product>", methods=["PATCH"])
+@role_required([1])
 def update_product(id_product):
     try:
         id_product = int(id_product)

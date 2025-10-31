@@ -3,6 +3,7 @@ from ...services.log.log_service import LogService
 from ...services.product_transaction.product_transaction_service import (
     ProductTransactionService,
 )
+from utils.decorators import jwt_required_custom, role_required
 
 product_transaction_bp = Blueprint(
     "product_transaction", __name__, url_prefix="/product-transactions"
@@ -10,6 +11,7 @@ product_transaction_bp = Blueprint(
 
 
 @product_transaction_bp.route("/", methods=["GET"])
+@role_required([1])
 def get_product_trasanctions():
     try:
         product_transactions = ProductTransactionService.get_all_products_transactions()
@@ -21,6 +23,7 @@ def get_product_trasanctions():
 
 
 @product_transaction_bp.route("/<id_product_transaction>", methods=["GET"])
+@role_required([1])
 def get_product_transaction(id_product_transaction):
 
     try:
@@ -44,6 +47,7 @@ def get_product_transaction(id_product_transaction):
 
 
 @product_transaction_bp.route("/", methods=["POST"])
+@jwt_required_custom
 def create_product_transaction():
 
     try:
@@ -71,6 +75,7 @@ def create_product_transaction():
 
 
 @product_transaction_bp.route("/report/excel", methods=["GET"])
+@role_required([1])
 def download_excel_report():
     """
     Endpoint para descargar el reporte de todas las transacciones en formato Excel

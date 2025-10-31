@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify
 from ...services.branch.branch_service import BranchService
 from ...services.log.log_service import LogService
+from utils.decorators import jwt_required_custom
 
 branch_bp = Blueprint("branch", __name__, url_prefix="/branches")
 
@@ -25,6 +26,7 @@ def get_branches():
 
 
 @branch_bp.route("/<id_branch>", methods=["GET"])
+@jwt_required_custom
 def get_branch(id_branch):
 
     try:

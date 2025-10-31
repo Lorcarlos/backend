@@ -10,11 +10,12 @@ from .staff.staff_peticion import AppUser
 from .token.token import Token
 from .login_logs.user_logins import UserLogins
 from .log.log import Log
+from .rate_limit.rate_limit import RateLimit
 
 # Exportar todos los modelos para facilitar las importaciones
 __all__ = [
     'Company',
-    'Branch', 
+    'Branch',
     'Product',
     'Supplier',
     'Inventory',
@@ -23,5 +24,6 @@ __all__ = [
     'AppUser',
     'Token',
     'UserLogins',
-    'Log'
+    'Log',
+    'RateLimit'
 ]

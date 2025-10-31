@@ -1,5 +1,6 @@
 from ...database import db
 from ...models.staff.staff_peticion import AppUser
+from ...models.rate_limit.rate_limit import RateLimit
 from ...services.token.token_service import TokenService
 from ...services.log.log_service import LogService
 from ...services.login_logs.user_logins_service import UserLoginsService
@@ -11,6 +12,8 @@ from ...utils.validator import validate_data, validate_email, hash_password
 from werkzeug.security import check_password_hash
 from flask_jwt_extended import create_access_token
 from flask import jsonify
+import time
+import random
 
 
 def login(data):
@@ -19,17 +22,57 @@ def login(data):
 
     validate_data(data, required_fields)
 
+    username = data.get("username")
+
+    # Check if user is blocked
+    if RateLimit.is_blocked(username, "login"):
+        remaining_time = RateLimit.get_block_time_remaining(username, "login")
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{login.__name__}",
+                "message": f"Intento de login bloqueado para usuario: {username}",
+            }
+        )
+        raise ValueError(f"Cuenta bloqueada temporalmente. Intenta nuevamente en {remaining_time} minutos")
+
     user = (
-        AppUser.query.filter_by(username=data.get("username"))
+        AppUser.query.filter_by(username=username)
         .filter(AppUser.deleted_at.is_(None))
         .first()
     )
 
     if not user:
-        raise ValueError("Credenciales inválidas")
+        # Record failed attempt
+        remaining, is_blocked, block_until = RateLimit.record_attempt(username, "login", max_attempts=5, block_duration_minutes=30)
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{login.__name__}",
+                "message": f"Intento de login fallido - usuario no existe: {username}. Intentos restantes: {remaining}",
+            }
+        )
+        if is_blocked:
+            raise ValueError("Demasiados intentos fallidos. Cuenta bloqueada por 30 minutos")
+        if remaining > 0:
+            raise ValueError(f"Credenciales invalidas. Le quedan {remaining} intentos")
+        raise ValueError("Credenciales invalidas")
 
     if not check_password_hash(user.hashed_password, data.get("password")):
-        raise ValueError("Credenciales inválidas")
+        # Record failed attempt
+        remaining, is_blocked, block_until = RateLimit.record_attempt(username, "login", max_attempts=5, block_duration_minutes=30)
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{login.__name__}",
+                "message": f"Intento de login fallido - contraseña incorrecta para: {username}. Intentos restantes: {remaining}",
+            }
+        )
+        if is_blocked:
+            raise ValueError("Demasiados intentos fallidos. Cuenta bloqueada por 30 minutos")
+        if remaining > 0:
+            raise ValueError(f"Credenciales invalidas. Le quedan {remaining} intentos")
+        raise ValueError("Credenciales invalidas")
+
+    # Reset attempts on successful login
+    RateLimit.reset_attempts(username, "login")
 
     token = uniqueTokenGenerator()
 
@@ -50,31 +93,59 @@ def verify_otp(data):
 
     validate_data(data, required_fields)
 
+    username = data["username"]
+
+    # Check if user is blocked for OTP verification
+    if RateLimit.is_blocked(username, "verify-otp"):
+        remaining_time = RateLimit.get_block_time_remaining(username, "verify-otp")
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{verify_otp.__name__}",
+                "message": f"Intento de verificación OTP bloqueado para usuario: {username}",
+            }
+        )
+        raise ValueError(f"Cuenta bloqueada temporalmente. Intenta nuevamente en {remaining_time} minutos")
+
     user = (
-        AppUser.query.filter_by(username=data["username"])
+        AppUser.query.filter_by(username=username)
         .filter(AppUser.deleted_at.is_(None))
         .first()
     )
 
     if user is None:
+        # Record failed attempt
+        remaining, is_blocked, block_until = RateLimit.record_attempt(username, "verify-otp", max_attempts=3, block_duration_minutes=15)
         LogService.create_log(
             {
                 "module": f"{__name__}.{verify_otp.__name__}",
-                "message": "Se ingresó un usuario inválido en el inicio de sesión con otp",
+                "message": f"Intento de verificación OTP fallido - usuario no existe: {username}. Intentos restantes: {remaining}",
             }
         )
+        if is_blocked:
+            raise ValueError("Demasiados intentos fallidos. Cuenta bloqueada por 15 minutos")
+        if remaining > 0:
+            raise ValueError(f"El usuario ingresado no existe. Le quedan {remaining} intentos")
         raise ValueError("El usuario ingresado no existe")
 
-    tokenFound = TokenService.findValidToken(user.id, data["token"])
-
-    if tokenFound is None:
+    try:
+        tokenFound = TokenService.findValidToken(user.id, data["token"])
+    except ValueError:
+        # Token is invalid - record failed attempt
+        remaining, is_blocked, block_until = RateLimit.record_attempt(username, "verify-otp", max_attempts=3, block_duration_minutes=15)
         LogService.create_log(
             {
                 "module": f"{__name__}.{verify_otp.__name__}",
-                "message": "Se ingresó un token inválido en el inicio de sesión con otp",
+                "message": f"Intento de verificación OTP fallido - token inválido para: {username}. Intentos restantes: {remaining}",
             }
         )
+        if is_blocked:
+            raise ValueError("Demasiados intentos fallidos. Cuenta bloqueada por 15 minutos")
+        if remaining > 0:
+            raise ValueError(f"El token ingresado no existe. Le quedan {remaining} intentos")
         raise ValueError("El token ingresado no existe")
+
+    # Reset attempts on successful OTP verification
+    RateLimit.reset_attempts(username, "verify-otp")
 
     tokenFound.is_used = True
     db.session.commit()
@@ -116,6 +187,10 @@ def forgot_password_service(data):
     user = get_user_by_email(email)
 
     if user is None:
+        # Add a random delay (1.5 to 3 seconds) to prevent timing attacks
+        # This makes the response time similar to when sending an email
+        time.sleep(random.uniform(1.5, 3.0))
+
         LogService.create_log(
             {
                 "module": f"{__name__}.{forgot_password_service.__name__}",
@@ -143,27 +218,55 @@ def verify_reset_password_otp_service(data):
 
     validate_data(data, required_fields)
 
-    user = get_user_by_email(data["email"])
+    email = data["email"]
+
+    # Check if email is blocked for password reset OTP verification
+    if RateLimit.is_blocked(email, "verify-otp-password"):
+        remaining_time = RateLimit.get_block_time_remaining(email, "verify-otp-password")
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{verify_reset_password_otp_service.__name__}",
+                "message": f"Intento de verificación OTP de reseteo bloqueado para email: {email}",
+            }
+        )
+        raise ValueError(f"Cuenta bloqueada temporalmente. Intenta nuevamente en {remaining_time} minutos")
+
+    user = get_user_by_email(email)
 
     if user is None:
+        # Record failed attempt
+        remaining, is_blocked, block_until = RateLimit.record_attempt(email, "verify-otp-password", max_attempts=3, block_duration_minutes=15)
         LogService.create_log(
             {
                 "module": f"{__name__}.{verify_reset_password_otp_service.__name__}",
-                "message": "Se ingresó un email inválido en el reseteo de contraseña con otp",
+                "message": f"Intento de verificación OTP de reseteo fallido - email no existe: {email}. Intentos restantes: {remaining}",
             }
         )
+        if is_blocked:
+            raise ValueError("Demasiados intentos fallidos. Cuenta bloqueada por 15 minutos")
+        if remaining > 0:
+            raise ValueError(f"El email ingresado no existe. Le quedan {remaining} intentos")
         raise ValueError("El email ingresado no existe")
 
-    tokenFound = TokenService.findValidToken(user.id, data["token"])
-
-    if tokenFound is None:
+    try:
+        tokenFound = TokenService.findValidToken(user.id, data["token"])
+    except ValueError:
+        # Token is invalid - record failed attempt
+        remaining, is_blocked, block_until = RateLimit.record_attempt(email, "verify-otp-password", max_attempts=3, block_duration_minutes=15)
         LogService.create_log(
             {
                 "module": f"{__name__}.{verify_reset_password_otp_service.__name__}",
-                "message": "Se ingresó un token inválido en el reseteo de contraseña con otp",
+                "message": f"Intento de verificación OTP de reseteo fallido - token inválido para: {email}. Intentos restantes: {remaining}",
             }
         )
+        if is_blocked:
+            raise ValueError("Demasiados intentos fallidos. Cuenta bloqueada por 15 minutos")
+        if remaining > 0:
+            raise ValueError(f"El token ingresado no existe. Le quedan {remaining} intentos")
         raise ValueError("El token ingresado no existe")
+
+    # Reset attempts on successful password reset OTP verification
+    RateLimit.reset_attempts(email, "verify-otp-password")
 
     tokenFound.is_used = True
     db.session.commit()

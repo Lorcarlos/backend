@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from ...services.log.log_service import LogService
+from utils.decorators import role_required
 
 # ✅ Prefijo del Blueprint
 log_bp = Blueprint("log", __name__, url_prefix="/logs")
@@ -7,6 +8,7 @@ log_bp = Blueprint("log", __name__, url_prefix="/logs")
 # ✅ Aceptamos GET y OPTIONS (para CORS preflight)
 @log_bp.route("", methods=["GET", "OPTIONS"])
 @log_bp.route("/", methods=["GET", "OPTIONS"])
+@role_required([1])
 def get_logs():
     # 🟢 Si es una solicitud de preflight (OPTIONS), respondemos sin error
     if request.method == "OPTIONS":
@@ -25,6 +27,7 @@ def get_logs():
 
 
 @log_bp.route("/<int:id_log>", methods=["GET", "OPTIONS"])
+@role_required([1])
 def get_log(id_log):
     if request.method == "OPTIONS":
         return jsonify({"ok": True}), 200

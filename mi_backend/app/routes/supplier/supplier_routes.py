@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from ...services.supplier.supplier_service import SupplierService
 from ...services.log.log_service import LogService
 from flask_cors import CORS
+from utils.decorators import jwt_required_custom, role_required
 
 supplier_bp = Blueprint("supplier", __name__, url_prefix="/suppliers")
 
@@ -9,6 +10,7 @@ CORS(supplier_bp)
 
 
 @supplier_bp.route("/", methods=["GET"])
+@jwt_required_custom
 def get_suppliers():
 
     try:
@@ -26,6 +28,7 @@ def get_suppliers():
 
 
 @supplier_bp.route("/<id_supplier>", methods=["GET"])
+@jwt_required_custom
 def get_supplier(id_supplier):
 
     try:
@@ -54,6 +57,7 @@ def get_supplier(id_supplier):
 
 
 @supplier_bp.route("/", methods=["POST"])
+@role_required([1])
 def create_supplier():
 
     try:
@@ -74,6 +78,7 @@ def create_supplier():
 
 
 @supplier_bp.route("/<id_supplier>", methods=["PATCH"])
+@role_required([1])
 def update_supplier(id_supplier):
 
     try:
@@ -103,6 +108,7 @@ def update_supplier(id_supplier):
 
 
 @supplier_bp.route("/<id_supplier>", methods=["DELETE"])
+@role_required([1])
 def delete_supplier(id_supplier):
 
     try:

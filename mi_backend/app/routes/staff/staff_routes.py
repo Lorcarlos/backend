@@ -9,12 +9,14 @@ from ...services.staff.staff import (
     update_user_service,
     serialize_user,
 )
+from utils.decorators import role_required, jwt_required_custom
 
 
 personal_bp = Blueprint("personal_bp", __name__)
 
 @personal_bp.route("/users", methods=["GET"])
 @personal_bp.route("/users/", methods=["GET"])
+@role_required([1])
 def get_all_users():
     try:
         users = AppUser.query.filter_by(deleted_at=None).all()
@@ -50,13 +52,11 @@ def get_all_users():
 
 
 @personal_bp.route("/user/me", methods=["GET"])
+@jwt_required_custom
 def get_current_user():
     try:
-        # Verificar y obtener el JWT
-        verify_jwt_in_request()
-        claims = get_jwt()
-
         # Obtener el user_id del JWT
+        claims = get_jwt()
         user_id = claims.get("user_id")
 
         if not user_id:
@@ -83,6 +83,7 @@ def get_current_user():
 
 
 @personal_bp.route("/users/<user_id>", methods=["GET"])
+@role_required([1])
 def get_user(user_id):
     try:
 
@@ -103,6 +104,7 @@ def get_user(user_id):
 
 
 @personal_bp.route("/user_registration", methods=["POST"])
+@role_required([1])
 def user_registration():
     try:
         data = request.get_json()
@@ -141,6 +143,7 @@ def user_registration():
 
 
 @personal_bp.route("/user/<document_id>", methods=["DELETE"])
+@role_required([1])
 def delete_user(document_id):
     try:
         eliminate_flag = request.args.get("eliminate", "false").lower() == "true"
@@ -174,6 +177,7 @@ def delete_user(document_id):
 
 
 @personal_bp.route("/user/<document_id>", methods=["PUT"])
+@jwt_required_custom
 def update_user(document_id):
     try:
         data = request.get_json() or {}

@@ -1,11 +1,13 @@
 from flask import Blueprint, jsonify
 from ...services.company.company_service import CompanyService
 from ...services.log.log_service import LogService
+from utils.decorators import role_required
 
 company_bp = Blueprint("company", __name__, url_prefix="/companies")
 
 
 @company_bp.route("/", methods=["GET"])
+@role_required([1])
 def get_companies():
     try:
         companies = CompanyService.get_all_companies()
@@ -23,6 +25,7 @@ def get_companies():
 
 
 @company_bp.route("/<id_company>", methods=["GET"])
+@role_required([1])
 def get_company_by_id(id_company):
 
     try:

@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from ...services.inventory.inventory_service import InventoryService
 from ...services.log.log_service import LogService
 from flask_cors import CORS
+from utils.decorators import jwt_required_custom
 
 inventory_bp = Blueprint("inventory", __name__, url_prefix="/inventories")
 
@@ -31,6 +32,7 @@ def get_inventories():
 
 
 @inventory_bp.route("/levels", methods=["GET"])
+@jwt_required_custom
 def get_inventories_with_levels():
     try:
         branch_id = request.args.get("branch_id", type=int)
@@ -53,6 +55,7 @@ def get_inventories_with_levels():
 
 
 @inventory_bp.route("/<id_inventory>", methods=["GET"])
+@jwt_required_custom
 def get_inventory_by_id(id_inventory):
     try:
         id_inventory = int(id_inventory)
