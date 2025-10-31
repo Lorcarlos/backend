@@ -187,8 +187,8 @@ def forgot_password_service(data):
     user = get_user_by_email(email)
 
     if user is None:
-        # Add a random delay (1.5 to 3 seconds) to prevent timing attacks
-        # This makes the response time similar to when sending an email
+        # Agregar un delay aleatorio (1.5 a 3 segundos) para prevenir timing attacks
+        # Esto hace que el tiempo de respuesta sea similar al envío de un email
         time.sleep(random.uniform(1.5, 3.0))
 
         LogService.create_log(
