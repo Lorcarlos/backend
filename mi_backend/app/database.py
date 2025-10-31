@@ -13,9 +13,11 @@ def init_db(app):
 
     # Evita usar conexiones muertas
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_pre_ping": True,        # chequea que la conexión siga viva antes de usarla
-        "pool_recycle": 280,          # recicla conexiones cada 5 min (antes del timeout del servidor)
-        "pool_timeout": 30,           # espera máx. 30 seg al obtener conexión del pool
+        "pool_pre_ping": True,  # chequea que la conexión siga viva antes de usarla
+        "pool_recycle": 280,  # recicla conexiones cada 5 min (antes del timeout del servidor)
+        "pool_timeout": 30,  # espera máx. 30 seg al obtener conexión del pool
+        "pool_size": 5,
+        "max_overflow": 10,
     }
 
     db.init_app(app)
