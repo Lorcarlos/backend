@@ -6,6 +6,8 @@ from ...services.login.login_service import (
     forgot_password_service,
     verify_reset_password_otp_service,
     reset_password_service,
+    resend_otp_login_service,
+    resend_otp_password_service,
 )
 from flask import jsonify
 
@@ -158,6 +160,72 @@ def reset_password():
         LogService.create_log(
             {
                 "module": f"{__name__}.{reset_password.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
+        return jsonify({"error": str(e)}), 500
+
+
+@auth_bp.route("/resend-otp-login", methods=["POST"])
+def resend_otp_login():
+    """
+    Endpoint para reenviar el código OTP de login.
+    """
+    try:
+        data = request.get_json()
+
+        result = resend_otp_login_service(data)
+
+        return (
+            jsonify(
+                {
+                    "ok": True,
+                    "message": result,
+                }
+            ),
+            200,
+        )
+
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 404
+
+    except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{resend_otp_login.__name__}",
+                "message": f"Exception error {str(e)}",
+            }
+        )
+        return jsonify({"error": str(e)}), 500
+
+
+@auth_bp.route("/resend-otp-password", methods=["POST"])
+def resend_otp_password():
+    """
+    Endpoint para reenviar el código OTP de recuperación de contraseña.
+    """
+    try:
+        data = request.get_json()
+
+        result = resend_otp_password_service(data)
+
+        return (
+            jsonify(
+                {
+                    "ok": True,
+                    "message": result,
+                }
+            ),
+            200,
+        )
+
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 404
+
+    except Exception as e:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{resend_otp_password.__name__}",
                 "message": f"Exception error {str(e)}",
             }
         )

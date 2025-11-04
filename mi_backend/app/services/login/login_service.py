@@ -313,3 +313,117 @@ def reset_password_service(data):
     db.session.commit()
 
     return "Contraseña restaurada exitosamente"
+
+
+def resend_otp_login_service(data):
+    """
+    Reenvía el código OTP para login.
+    Genera un nuevo código y lo envía al correo del usuario.
+    """
+    required_fields = {"username": str}
+
+    validate_data(data, required_fields)
+
+    username = data.get("username")
+
+    # Check if user is blocked
+    if RateLimit.is_blocked(username, "login"):
+        remaining_time = RateLimit.get_block_time_remaining(username, "login")
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{resend_otp_login_service.__name__}",
+                "message": f"Intento de reenvío de OTP bloqueado para usuario: {username}",
+            }
+        )
+        raise ValueError(f"Cuenta bloqueada temporalmente. Intenta nuevamente en {remaining_time} minutos")
+
+    user = (
+        AppUser.query.filter_by(username=username)
+        .filter(AppUser.deleted_at.is_(None))
+        .first()
+    )
+
+    if not user:
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{resend_otp_login_service.__name__}",
+                "message": f"Intento de reenvío de OTP - usuario no existe: {username}",
+            }
+        )
+        raise ValueError("El usuario ingresado no existe")
+
+    # Generar nuevo token
+    token = uniqueTokenGenerator()
+
+    # Crear nuevo token en la base de datos
+    TokenService.create(
+        {"app_user_id": user.id, "token": token, "type": TokenType.OTP_LOGIN.value}
+    )
+
+    # Enviar correo con el nuevo código
+    send_otp_mail(
+        f"Código de autenticación {token}",
+        user.email,
+        f"Tu código de verificación para iniciar sesión es {token}, recuerda que tienes 10 minutos antes de que expire",
+    )
+
+    LogService.create_log(
+        {
+            "module": f"{__name__}.{resend_otp_login_service.__name__}",
+            "message": f"OTP reenviado exitosamente para usuario: {username}",
+        }
+    )
+
+    return "Código OTP reenviado exitosamente"
+
+
+def resend_otp_password_service(data):
+    """
+    Reenvía el código OTP para recuperación de contraseña.
+    Genera un nuevo código y lo envía al correo del usuario.
+    """
+    required_fields = {"email": str}
+
+    validate_data(data, required_fields)
+
+    email = data.get("email")
+
+    validate_email(email)
+
+    user = get_user_by_email(email)
+
+    if user is None:
+        # Agregar un delay aleatorio para prevenir timing attacks
+        time.sleep(random.uniform(1.5, 3.0))
+
+        LogService.create_log(
+            {
+                "module": f"{__name__}.{resend_otp_password_service.__name__}",
+                "message": "Se ingresó un email inválido en el reenvío de token para reseteo de contraseña",
+            }
+        )
+        raise ValueError("El email ingresado no existe")
+
+    # Generar nuevo token
+    token = uniqueTokenGenerator()
+
+    # Crear nuevo token en la base de datos
+    TokenService.create(
+        {"token": token, "app_user_id": user.id, "type": TokenType.RESET_PASSWORD.value}
+    )
+
+    # Enviar correo con el nuevo código
+    send_otp_mail(
+        f"Código para reestablecer contraseña {token}",
+        user.email,
+        f"Hola! aquí tienes tu código para reestablecer la contraseña de tu usuario: {token}. Si no solicitaste esto, por favor contacta con soporte inmediatamente.",
+    )
+
+    LogService.create_log(
+        {
+            "module": f"{__name__}.{resend_otp_password_service.__name__}",
+            "message": f"Token de reseteo de contraseña reenviado exitosamente para email: {email}",
+        }
+    )
+
+    return "Código OTP reenviado exitosamente"
